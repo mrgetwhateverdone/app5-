@@ -50,7 +50,8 @@ body {
 }
 
 .logo:hover {
-  color: #000;
+  color: #b18f25;
+  text-shadow: 0 0 10px rgba(177, 143, 37, 0.3);
 }
 
 .nav-links {
@@ -169,7 +170,8 @@ body {
 }
 
 .title-nextt:hover {
-  color: #000;
+  color: #b18f25;
+  text-shadow: 0 0 10px rgba(177, 143, 37, 0.3);
 }
 
 .highlight {
