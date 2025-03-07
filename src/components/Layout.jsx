@@ -8,7 +8,7 @@ function Layout({ children }) {
     <div className="app-container">
       <header className="app-header">
         <div className="header-content">
-          <Link to="/" className="logo">Nextt</Link>
+          <Link to="/" className="logo" style={{ fontWeight: 800, fontSize: '2.5rem', fontStyle: 'italic', letterSpacing: '-0.5px' }}>Nextt</Link>
           <nav className="nav-links">
             <span className="nav-link">Features</span>
             <button className="login-button" onClick={() => alert('Login functionality coming soon!')}>Login</button>
