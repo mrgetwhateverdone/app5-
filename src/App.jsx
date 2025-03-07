@@ -18,21 +18,21 @@ function Home() {
           
           <div className="features-grid">
             <div className="feature-card">
-              <div className="feature-icon">🍽️</div>
-              <h3>Food Mood Tracking</h3>
-              <p>Build your personal database of foods and how they make you feel physically and mentally.</p>
+              <div className="feature-icon">📋</div>
+              <h3>Personalized Plans</h3>
+              <p>Workout plans tailored to your sport, position, and body type</p>
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon">🎯</div>
-              <h3>Smart Decision Tools</h3>
-              <p>Use our coin toss feature when willpower fails to make better choices in moments of temptation.</p>
+              <div className="feature-icon">📊</div>
+              <h3>Progress Tracking</h3>
+              <p>Monitor your improvements with detailed analytics</p>
             </div>
 
             <div className="feature-card">
-              <div className="feature-icon">🔒</div>
-              <h3>Privacy First</h3>
-              <p>All data stays on your device. Works completely offline. No cloud syncing required.</p>
+              <div className="feature-icon">⏱️</div>
+              <h3>6-Week Programs</h3>
+              <p>Structured training cycles with progressive overload</p>
             </div>
           </div>
 
