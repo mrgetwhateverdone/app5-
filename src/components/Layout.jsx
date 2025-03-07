@@ -1,34 +1,39 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faInstagram, faXTwitter } from '@fortawesome/free-brands-svg-icons';
 
 function Layout({ children }) {
+  const location = useLocation();
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   return (
     <div className="app-container">
       <header className="app-header">
-        <div className="header-content">
-          <Link to="/" className="logo" style={{ fontWeight: 800, fontSize: '2.5rem', fontStyle: 'italic', letterSpacing: '-0.5px' }}>Nextt</Link>
+        <div className="header-content" style={{ padding: '0.5rem 0' }}>
+          <Link to="/" className="logo" style={{ fontWeight: 800, fontSize: '2.5rem', fontStyle: 'italic', letterSpacing: '-0.5px', lineHeight: 1 }}>Nextt</Link>
           <nav className="nav-links">
-            <span className="nav-link">Features</span>
-            <button className="login-button" onClick={() => alert('Login functionality coming soon!')}>Login</button>
+            <Link to="/features" className="nav-link">Features</Link>
+            <Link to="/login" className="login-button">Sign In</Link>
           </nav>
         </div>
       </header>
 
       {children}
 
-      <div className="feedback-button-container">
-        <button 
-          className="feedback-button" 
-          onClick={() => alert('Feedback form coming soon!')}
-          onMouseDown={(e) => e.currentTarget.classList.add('feedback-button-pressed')}
-          onMouseUp={(e) => e.currentTarget.classList.remove('feedback-button-pressed')}
-          onMouseLeave={(e) => e.currentTarget.classList.remove('feedback-button-pressed')}
-        >
-          Leave Feedback
-        </button>
-      </div>
+      {!isAuthPage && (
+        <div className="feedback-button-container">
+          <Link 
+            to="/feedback"
+            className="feedback-button" 
+            onMouseDown={(e) => e.currentTarget.classList.add('feedback-button-pressed')}
+            onMouseUp={(e) => e.currentTarget.classList.remove('feedback-button-pressed')}
+            onMouseLeave={(e) => e.currentTarget.classList.remove('feedback-button-pressed')}
+          >
+            Leave Feedback
+          </Link>
+        </div>
+      )}
+
       <div className="social-icons-container">
         <a
           href="https://instagram.com/nexttapp"
