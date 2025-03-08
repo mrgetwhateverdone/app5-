@@ -1,59 +1,90 @@
 .training-dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
   min-height: 100vh;
-  background-color: #1a1a1a;
-  color: #ffffff;
   display: flex;
   flex-direction: column;
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom));
 }
 
 .dashboard-header {
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  border-bottom: 1px solid #333;
-}
-
-.back-button {
-  background: none;
-  border: none;
-  color: #ffffff;
-  font-size: 1.5rem;
-  padding: 0.5rem;
-  cursor: pointer;
-  margin-right: 1rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 15px;
+  color: black;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .dashboard-header h1 {
-  margin: 0;
-  font-size: 1.25rem;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #d4af37;
+  font-weight: 800;
+  font-style: italic;
 }
 
-.dashboard-content {
-  flex: 1;
+.profile-info {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.sections-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
   padding: 1rem;
-  overflow-y: auto;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
 .section-card {
+  background: #ffffff;
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border-radius: 8px;
-  background-color: #2a2a2a;
-  position: relative;
+  width: 100%;
+  transform-origin: top;
+  animation: slideIn 0.5s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
 }
 
 .section-number {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid #ffffff;
+  width: 60px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  margin-right: 1rem;
+  background: #d4af37;
+  color: black;
+  border-radius: 50%;
+  margin-right: 2rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
 .section-info {
@@ -61,102 +92,117 @@
 }
 
 .section-info h2 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.8rem;
+  margin-bottom: 0.75rem;
+  color: #333;
+  font-weight: 800;
 }
 
 .section-info p {
-  margin: 0.25rem 0 0;
-  font-size: 0.875rem;
-  color: #888;
+  color: #666;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.lessons-count {
+  display: inline-block;
+  padding: 0.75rem 1.25rem;
+  background: #f8f9fa;
+  border-radius: 20px;
+  font-size: 1.1rem;
+  color: #666;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.section-card:hover .lessons-count {
+  background: #d4af37;
+  color: black;
 }
 
 .lock-icon {
   position: absolute;
+  top: 1rem;
   right: 1rem;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
 }
 
-.locked {
-  opacity: 0.7;
-}
-
-.locked .section-number {
-  border-color: #666;
-}
-
-.bottom-nav {
+.mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
   display: flex;
   justify-content: space-around;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 1rem;
-  background-color: #2a2a2a;
-  border-top: 1px solid #333;
+  text-decoration: none;
+  color: #666;
+  transition: all 0.3s ease;
+  padding: 0.5rem;
+  border-radius: 8px;
+  min-width: 64px;
 }
 
-.nav-button {
-  background: none;
-  border: none;
-  color: #ffffff;
+.nav-item.active {
+  color: #d4af37;
+}
+
+.nav-icon {
   font-size: 1.5rem;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
-  transition: opacity 0.2s;
+  margin-bottom: 0.25rem;
 }
 
-.nav-button:hover {
-  opacity: 0.8;
+.nav-label {
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 /* Workout Plan Styles */
 .workout-plan {
-  padding: 1rem;
-  color: #ffffff;
-  height: 100%;
-  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 15px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .week-selector {
   margin-bottom: 2rem;
-  text-align: center;
 }
 
 .week-navigation {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.week-navigation h2 {
-  font-size: 1.5rem;
-  margin: 0;
-  min-width: 120px;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .week-nav-button {
   background: none;
-  border: 2px solid #666;
-  color: #ffffff;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  font-size: 1.25rem;
+  border: none;
+  font-size: 1.5rem;
+  color: #d4af37;
   cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 0.5rem;
+  transition: transform 0.3s ease;
 }
 
 .week-nav-button:hover:not(:disabled) {
-  background-color: #666;
+  transform: scale(1.2);
 }
 
 .week-nav-button:disabled {
-  opacity: 0.5;
+  color: #ccc;
   cursor: not-allowed;
 }
 
@@ -164,78 +210,77 @@
   display: flex;
   justify-content: center;
   gap: 1rem;
-  margin-bottom: 2rem;
 }
 
 .day-button {
-  background-color: #333;
-  border: none;
-  color: #ffffff;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
+  padding: 0.8rem 1.5rem;
+  border: 2px solid #f8f9fa;
+  border-radius: 10px;
+  background: none;
+  color: #666;
   cursor: pointer;
-  transition: background-color 0.2s;
-  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
-.day-button.active {
-  background-color: #4CAF50;
+.day-button.active,
+.day-button:hover {
+  background: #d4af37;
+  border-color: #d4af37;
+  color: black;
 }
 
 .workout-details {
-  background-color: #2a2a2a;
-  padding: 1.5rem;
-  border-radius: 8px;
+  padding: 2rem;
+  background: #f8f9fa;
+  border-radius: 15px;
 }
 
 .workout-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .workout-header h3 {
-  font-size: 1.25rem;
-  margin: 0;
+  font-size: 1.8rem;
+  color: #333;
 }
 
 .workout-intensity {
-  background-color: #4CAF50;
-  color: white;
   padding: 0.5rem 1rem;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  background: #d4af37;
+  color: black;
+  border-radius: 20px;
+  font-weight: bold;
 }
 
 .workout-stats {
   display: flex;
   gap: 2rem;
   margin-bottom: 2rem;
-  padding: 1rem;
-  background-color: #333;
-  border-radius: 4px;
 }
 
 .stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
+  flex: 1;
+  text-align: center;
+  padding: 1rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .stat-label {
-  font-size: 0.875rem;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  display: block;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.5rem;
 }
 
 .stat-value {
   font-size: 1.5rem;
-  font-weight: 500;
-  color: #4CAF50;
+  font-weight: bold;
+  color: #333;
 }
 
 .exercise-section {
@@ -243,177 +288,176 @@
 }
 
 .exercise-section h4 {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
+  color: #333;
   margin-bottom: 1rem;
-  color: #ccc;
 }
 
 .exercise-list {
   list-style: none;
   padding: 0;
-  margin: 0;
 }
 
 .exercise-item {
-  padding: 1rem;
-  background-color: #333;
-  margin-bottom: 0.75rem;
-  border-radius: 4px;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  transition: transform 0.2s;
-}
-
-.exercise-item:hover {
-  transform: translateX(4px);
+  padding: 1rem;
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .exercise-number {
-  background-color: #4CAF50;
-  color: white;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.875rem;
-  font-weight: 500;
+  background: #d4af37;
+  color: black;
+  border-radius: 50%;
+  margin-right: 1rem;
+  font-weight: bold;
+}
+
+.workout-notes {
+  padding: 1rem;
+  background: white;
+  border-radius: 10px;
+  margin-bottom: 2rem;
+  color: #666;
 }
 
 .start-workout-button {
   width: 100%;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
   padding: 1rem;
-  border-radius: 4px;
+  background: #d4af37;
+  color: black;
+  border: none;
+  border-radius: 10px;
   font-size: 1.1rem;
+  font-weight: bold;
   cursor: pointer;
-  margin-top: 2rem;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
 }
 
 .start-workout-button:hover {
-  background-color: #45a049;
+  background: #c19f35;
 }
 
-/* Existing styles */
-.training-dashboard {
-  min-height: 100vh;
-  background-color: #1a1a1a;
-  color: #ffffff;
-  display: flex;
-  flex-direction: column;
+/* Remove old navigation styles */
+.bottom-nav {
+  display: none;
 }
 
-.dashboard-header {
-  padding: 1rem;
+/* Animation for workout plan transition */
+.workout-plan-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.workout-plan-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.empty-state {
   display: flex;
+  justify-content: center;
   align-items: center;
-  border-bottom: 1px solid #333;
+  min-height: 60vh;
+  padding: 2rem;
 }
 
-.back-button {
-  background: none;
-  border: none;
-  color: #ffffff;
-  font-size: 1.5rem;
-  padding: 0.5rem;
-  cursor: pointer;
-  margin-right: 1rem;
+.empty-state-content {
+  text-align: center;
+  max-width: 400px;
+  animation: fadeIn 0.5s ease-out;
 }
 
-.dashboard-header h1 {
-  margin: 0;
-  font-size: 1.25rem;
+.empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  animation: bounce 2s infinite;
 }
 
-.dashboard-content {
-  flex: 1;
-  padding: 1rem;
-  overflow-y: auto;
-}
-
-.section-card {
-  display: flex;
-  align-items: center;
-  padding: 1rem;
+.empty-state-content h2 {
+  font-size: 1.8rem;
   margin-bottom: 1rem;
-  border-radius: 8px;
-  background-color: #2a2a2a;
-  position: relative;
+  color: #333;
+}
+
+.empty-state-content p {
+  color: #666;
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.create-workout-button {
+  background: #d4af37;
+  color: black;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.3s ease;
 }
 
-.section-card:hover {
-  background-color: #333;
+.create-workout-button:hover {
+  background: #c19f35;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
 }
 
-.section-number {
-  width: 40px;
-  height: 40px;
+.add-workout-button {
+  position: fixed;
+  bottom: calc(4rem + env(safe-area-inset-bottom) + 1rem);
+  right: 1rem;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  border: 2px solid #ffffff;
+  background: #d4af37;
+  color: black;
+  border: none;
+  font-size: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
-  margin-right: 1rem;
-}
-
-.section-info {
-  flex: 1;
-}
-
-.section-info h2 {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.section-info p {
-  margin: 0.25rem 0 0;
-  font-size: 0.875rem;
-  color: #888;
-}
-
-.lock-icon {
-  position: absolute;
-  right: 1rem;
-  font-size: 1.25rem;
-}
-
-.locked {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.locked .section-number {
-  border-color: #666;
-}
-
-.bottom-nav {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding: 1rem;
-  background-color: #2a2a2a;
-  border-top: 1px solid #333;
-}
-
-.nav-button {
-  background: none;
-  border: none;
-  color: #ffffff;
-  font-size: 1.5rem;
-  padding: 0.5rem 1rem;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.2);
+  z-index: 100;
 }
 
-.nav-button:hover {
-  opacity: 0.8;
+.add-workout-button:hover {
+  transform: scale(1.1);
+  background: #c19f35;
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-20px);
+  }
+  60% {
+    transform: translateY(-10px);
+  }
 }

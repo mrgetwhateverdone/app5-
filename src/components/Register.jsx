@@ -96,11 +96,11 @@ function Register() {
     }
 
     try {
-      // Here you would implement actual registration logic
-      // For now, simulate a successful registration
+      // Store basic user info
       localStorage.setItem('userEmail', formData.email);
       localStorage.setItem('userName', formData.fullName);
-      navigate('/profile-setup');
+      localStorage.setItem('isNewUser', 'true');
+      navigate('/dashboard');
     } catch (error) {
       console.error('Registration error:', error);
       alert('An error occurred during registration. Please try again.');

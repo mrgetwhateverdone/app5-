@@ -36,7 +36,7 @@
 }
 
 .signin-link:hover {
-  color: #b18f25;
+  color: #000;
 }
 
 .login-form {
@@ -75,7 +75,7 @@
 }
 
 .forgot-password-link:hover {
-  color: #d4af37;
+  color: #000;
 }
 
 .form-group label {
@@ -343,7 +343,7 @@
   height: 1px;
   bottom: -1px;
   left: 0;
-  background-color: #d4af37;
+  background-color: #000;
   transform: scaleX(0);
   transform-origin: bottom right;
   transition: transform 0.3s ease;
@@ -355,7 +355,7 @@
 }
 
 .text-link:hover {
-  color: #b18f25;
+  color: #000;
 }
 
 .submit-button {

@@ -86,10 +86,8 @@ function ProfileSetup() {
     }
 
     try {
-      // Here you would implement the actual profile setup logic
-      // For now, we'll just store it in localStorage
       localStorage.setItem('userProfile', JSON.stringify(formData));
-      navigate('/dashboard'); // You'll need to create this route and component
+      navigate('/dashboard', { replace: true }); // Use replace to prevent going back to setup
     } catch (error) {
       console.error('Profile setup error:', error);
       setErrors(prev => ({ ...prev, submit: 'An error occurred. Please try again.' }));
@@ -131,7 +129,7 @@ function ProfileSetup() {
                     value={formData.heightFeet}
                     onChange={handleInputChange}
                   >
-                    <option value="">5</option>
+                    <option value="">Select feet</option>
                     {[4, 5, 6, 7, 8].map(feet => (
                       <option key={feet} value={feet}>{feet}</option>
                     ))}
@@ -148,7 +146,7 @@ function ProfileSetup() {
                     value={formData.heightInches}
                     onChange={handleInputChange}
                   >
-                    <option value="">10</option>
+                    <option value="">Select inches</option>
                     {Array.from({length: 12}, (_, i) => (
                       <option key={i} value={i}>{i}</option>
                     ))}
@@ -166,7 +164,7 @@ function ProfileSetup() {
                   value={formData.weight}
                   onChange={handleInputChange}
                 >
-                  <option value="">175</option>
+                  <option value="">Select weight</option>
                   {Array.from({length: 925}, (_, i) => i + 75).map(weight => (
                     <option key={weight} value={weight}>{weight} lbs</option>
                   ))}

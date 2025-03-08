@@ -15,8 +15,13 @@ import './components/Features.css';
 import Login from './components/Login';
 import Register from './components/Register';
 import ProfileSetup from './components/ProfileSetup';
+import TrainingDashboard from './components/TrainingDashboard';
+import Profile from './components/Profile';
+import Progress from './components/Progress';
 import './components/Login.css';
 import './components/ProfileSetup.css';
+import './components/Profile.css';
+import './components/Progress.css';
 
 function Home() {
   return (
@@ -78,6 +83,9 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/profile-setup" element={<ProfileSetup />} />
+        <Route path="/dashboard" element={<TrainingDashboard />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/progress" element={<Progress />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
