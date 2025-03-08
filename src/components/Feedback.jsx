@@ -12,7 +12,7 @@ function Feedback() {
             Help us improve your experience with Nextt by sharing your thoughts and suggestions.
           </p>
           <div className="email-section">
-            <a href="mailto:feedback@nexttapp.com" className="email-link">feedback@nexttapp.com</a>
+            <a href="mailto:contact@nextt.app" className="email-link">contact@nextt.app</a>
           </div>
         </div>
       </main>

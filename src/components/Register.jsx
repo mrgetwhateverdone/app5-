@@ -22,8 +22,8 @@ function Register() {
   const lastConfirmCharTimerRef = useRef(null);
 
   const validatePassword = (password) => {
-    if (password.length < 8) {
-      return 'Password must be at least 8 characters long';
+    if (password.length < 6) {
+      return 'Password must be at least 6 characters long';
     }
     if (!/[A-Z]/.test(password)) {
       return 'Password must contain at least one uppercase letter';
@@ -72,7 +72,7 @@ function Register() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!termsAccepted) {
       alert('Please accept the Terms of Service and Privacy Policy to continue.');
@@ -95,8 +95,16 @@ function Register() {
       return;
     }
 
-    // Add your form submission logic here
-    console.log('Form submitted:', formData);
+    try {
+      // Here you would implement actual registration logic
+      // For now, simulate a successful registration
+      localStorage.setItem('userEmail', formData.email);
+      localStorage.setItem('userName', formData.fullName);
+      navigate('/profile-setup');
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('An error occurred during registration. Please try again.');
+    }
   };
 
   return (
@@ -128,7 +136,7 @@ function Register() {
                 <input
                   type="email"
                   id="email"
-                  placeholder="Enter your email address"
+                  placeholder="contact@nextt.app"
                   className="form-input"
                   value={formData.email}
                   onChange={handleInputChange}

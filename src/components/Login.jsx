@@ -37,7 +37,7 @@ function Login() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!formData.email || !formData.password) {
@@ -45,8 +45,15 @@ function Login() {
       return;
     }
 
-    // Add your form submission logic here
-    console.log('Form submitted:', formData);
+    try {
+      // Here you would implement actual login logic
+      // For now, simulate a successful login
+      localStorage.setItem('userEmail', formData.email);
+      navigate('/profile-setup');
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('An error occurred during login. Please try again.');
+    }
   };
 
   return (
@@ -65,7 +72,7 @@ function Login() {
                 <input
                   type="email"
                   id="email"
-                  placeholder="Enter your email address"
+                  placeholder="contact@nextt.app"
                   className="form-input"
                   value={formData.email}
                   onChange={handleInputChange}

@@ -1,6 +1,6 @@
 import React from 'react';
 import './App.css';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import './components/PrivacyPolicy.css';
@@ -14,7 +14,9 @@ import Features from './components/Features';
 import './components/Features.css';
 import Login from './components/Login';
 import Register from './components/Register';
+import ProfileSetup from './components/ProfileSetup';
 import './components/Login.css';
+import './components/ProfileSetup.css';
 
 function Home() {
   return (
@@ -75,6 +77,8 @@ function App() {
         <Route path="/features" element={<Features />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/profile-setup" element={<ProfileSetup />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

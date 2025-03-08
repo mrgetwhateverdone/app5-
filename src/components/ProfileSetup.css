@@ -1,0 +1,113 @@
+.profile-setup-container {
+  max-width: 560px !important;
+}
+
+.height-container {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.height-container .form-group {
+  flex: 1;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 480px) {
+  .profile-setup-container {
+    padding: 1.5rem;
+  }
+
+  .height-container {
+    gap: 1rem;
+  }
+
+  /* Style select dropdowns for mobile */
+  select.form-input {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1em;
+    padding-right: 2.5rem;
+  }
+
+  /* Prevent zoom on mobile inputs */
+  select.form-input,
+  input[type="number"].form-input {
+    font-size: 16px !important;
+  }
+
+  /* Custom styling for number inputs */
+  input[type="number"].form-input {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  input[type="number"].form-input::-webkit-outer-spin-button,
+  input[type="number"].form-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+.focus-section {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.focus-section h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #222;
+}
+
+.focus-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.focus-button {
+  padding: 1rem 2rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: white;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #444;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.focus-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.focus-button.active {
+  background: #d4af37;
+  border-color: #d4af37;
+  color: white;
+}
+
+.title-nextt {
+  color: #d4af37;
+  display: inline-block;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-5px);
+  }
+  60% {
+    transform: translateY(-3px);
+  }
+}

@@ -13,7 +13,7 @@ function Layout({ children }) {
           <Link to="/" className="logo" style={{ fontWeight: 800, fontSize: '2.5rem', fontStyle: 'italic', letterSpacing: '-0.5px', lineHeight: 1 }}>Nextt</Link>
           <nav className="nav-links">
             <Link to="/features" className="nav-link">Features</Link>
-            <Link to="/login" className="login-button">Sign In</Link>
+            <Link to="/login" className="login-button">Login</Link>
           </nav>
         </div>
       </header>

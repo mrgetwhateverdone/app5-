@@ -67,7 +67,7 @@ function PrivacyPolicy() {
 
         <section>
           <h2>Contact Information</h2>
-          <p>If you have any questions about this Privacy Policy or would like to exercise your privacy rights under Missouri law, please contact me at: <a href="mailto:support@nexttapp.com">support@nexttapp.com</a>. As an individual developer, I strive to respond to all inquiries within a reasonable timeframe.</p>
+          <p>If you have any questions about this Privacy Policy or would like to exercise your privacy rights under Missouri law, please contact me at: <a href="mailto:contact@nextt.app">contact@nextt.app</a>. As an individual developer, I strive to respond to all inquiries within a reasonable timeframe.</p>
           <p>For legal matters, you may also contact the Missouri Attorney General's Consumer Protection Division at 1-800-392-8222 or visit <a href="https://ago.mo.gov" target="_blank" rel="noopener noreferrer">ago.mo.gov</a> to file a complaint.</p>
         </section>
         </div>
