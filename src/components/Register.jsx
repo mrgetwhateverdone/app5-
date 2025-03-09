@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from './Layout';
+import { signUp } from '../supabase';
 import './Login.css';
 
 function Register() {
@@ -18,6 +19,8 @@ function Register() {
   const [lastConfirmChar, setLastConfirmChar] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const lastCharTimerRef = useRef(null);
   const lastConfirmCharTimerRef = useRef(null);
 
@@ -40,6 +43,7 @@ function Register() {
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
+    setError(''); // Clear any previous errors
 
     if (id === 'password') {
       if (value.length > 0) {
@@ -75,7 +79,7 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!termsAccepted) {
-      alert('Please accept the Terms of Service and Privacy Policy to continue.');
+      setError('Please accept the Terms of Service and Privacy Policy to continue.');
       return;
     }
     
@@ -91,130 +95,123 @@ function Register() {
     }
 
     if (!formData.fullName || !formData.email) {
-      alert('Please fill in all fields');
+      setError('Please fill in all fields');
       return;
     }
 
+    setLoading(true);
+    setError('');
+
     try {
-      // Store basic user info
-      localStorage.setItem('userEmail', formData.email);
-      localStorage.setItem('userName', formData.fullName);
-      localStorage.setItem('isNewUser', 'true');
+      const { data, error: signUpError } = await signUp(
+        formData.email,
+        formData.password,
+        formData.fullName
+      );
+
+      if (signUpError) {
+        throw signUpError;
+      }
+
+      // Registration successful
       navigate('/dashboard');
-    } catch (error) {
-      console.error('Registration error:', error);
-      alert('An error occurred during registration. Please try again.');
+    } catch (err) {
+      setError(err.message || 'An error occurred during registration');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <Layout>
-      <main className="main-content">
-        <div className="content-wrapper login-content">
-          <div className="login-container">
-            <div className="login-header">
-              <h1>Create your account</h1>
-              <p>Or <Link to="/login" className="signin-link">sign in to your existing account</Link></p>
+      <div className="auth-container">
+        <div className="auth-box">
+          <h2>Create Account</h2>
+          {error && <div className="error-message">{error}</div>}
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <input
+                type="text"
+                id="fullName"
+                placeholder="Full Name"
+                value={formData.fullName}
+                onChange={handleInputChange}
+                className="auth-input"
+              />
             </div>
-
-            <form className="login-form" onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label htmlFor="fullName">Name</label>
-                <input
-                  type="text"
-                  id="fullName"
-                  placeholder="Nice to meet you, let's get to work!"
-                  className="form-input"
-                  value={formData.fullName}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="email">Email address</label>
-                <input
-                  type="email"
-                  id="email"
-                  placeholder="contact@nextt.app"
-                  className="form-input"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <div className="password-input-container">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    id="password"
-                    placeholder="Create a password"
-                    className={`form-input ${passwordError ? 'input-error' : ''}`}
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  {passwordError && <div className="error-message">{passwordError}</div>}
-                  {!showPassword && lastChar && (
-                    <span className="last-char">{lastChar}</span>
-                  )}
-                  <button
-                    type="button"
-                    className="password-toggle"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? '🔒' : '👁️'}
-                  </button>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="confirmPassword">Confirm Password</label>
-                <div className="password-input-container">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    id="confirmPassword"
-                    placeholder="Confirm your password"
-                    className={`form-input ${confirmPasswordError ? 'input-error' : ''}`}
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    required
-                  />
-                  {confirmPasswordError && <div className="error-message">{confirmPasswordError}</div>}
-                  {!showConfirmPassword && lastConfirmChar && (
-                    <span className="last-char">{lastConfirmChar}</span>
-                  )}
-                  <button
-                    type="button"
-                    className="password-toggle"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? '🔒' : '👁️'}
-                  </button>
-                </div>
-              </div>
-
-              <div className="form-checkbox">
-                <input 
-                  type="checkbox" 
-                  id="terms" 
-                  className="checkbox-input"
-                  checked={termsAccepted}
-                  onChange={(e) => setTermsAccepted(e.target.checked)}
-                />
-                <label htmlFor="terms" className="checkbox-label">
-                  I agree to the <Link to="/terms" className="text-link">Terms of Service</Link> and{' '}
-                  <Link to="/privacy" className="text-link">Privacy Policy</Link>.
-                </label>
-              </div>
-
-              <button type="submit" className="submit-button">Create Account</button>
-            </form>
-          </div>
+            <div className="form-group">
+              <input
+                type="email"
+                id="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="auth-input"
+              />
+            </div>
+            <div className="form-group password-group">
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className={`auth-input ${passwordError ? 'error' : ''}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="toggle-password"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+              {lastChar && <span className="last-char">{lastChar}</span>}
+            </div>
+            {passwordError && <div className="error-message">{passwordError}</div>}
+            <div className="form-group password-group">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                id="confirmPassword"
+                placeholder="Confirm Password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                className={`auth-input ${confirmPasswordError ? 'error' : ''}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="toggle-password"
+              >
+                {showConfirmPassword ? "Hide" : "Show"}
+              </button>
+              {lastConfirmChar && <span className="last-char">{lastConfirmChar}</span>}
+            </div>
+            {confirmPasswordError && <div className="error-message">{confirmPasswordError}</div>}
+            <div className="form-group checkbox-group">
+              <input
+                type="checkbox"
+                id="terms"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+              />
+              <label htmlFor="terms">
+                I accept the <Link to="/terms" className="text-link">Terms of Service</Link> and{' '}
+                <Link to="/privacy" className="text-link">Privacy Policy</Link>
+              </label>
+            </div>
+            <button 
+              type="submit" 
+              className="auth-button"
+              disabled={loading}
+            >
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </button>
+          </form>
+          <p className="auth-footer">
+            Already have an account? <Link to="/login" className="signin-link">Sign in</Link>
+          </p>
         </div>
-      </main>
+      </div>
     </Layout>
   );
 }
