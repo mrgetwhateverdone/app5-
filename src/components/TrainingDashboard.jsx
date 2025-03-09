@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Layout from './Layout';
 import './TrainingDashboard.css';
+import ActiveWorkout from './ActiveWorkout';
 
 function generateWorkoutPlan(userProfile) {
   if (!userProfile) return null;
@@ -105,7 +106,7 @@ function generateWorkoutPlan(userProfile) {
   return program;
 }
 
-function WorkoutPlan({ plan }) {
+function WorkoutPlan({ plan, onStartWorkout }) {
   const [currentWeek, setCurrentWeek] = useState(0);
   const [selectedDay, setSelectedDay] = useState(0);
 
@@ -163,7 +164,7 @@ function WorkoutPlan({ plan }) {
             <span className="stat-value">{currentWorkout.reps}</span>
           </div>
         </div>
-
+        
         <div className="exercise-section">
           <h4>Today's Exercises</h4>
           <ul className="exercise-list">
@@ -180,7 +181,10 @@ function WorkoutPlan({ plan }) {
           <p>{currentWorkout.notes}</p>
         </div>
 
-        <button className="start-workout-button">
+        <button 
+          className="start-workout-button"
+          onClick={() => onStartWorkout(currentWorkout)}
+        >
           Start Workout
         </button>
       </div>
@@ -193,6 +197,7 @@ function TrainingDashboard() {
   const [workoutPlan, setWorkoutPlan] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [showWorkoutPlan, setShowWorkoutPlan] = useState(false);
+  const [activeWorkout, setActiveWorkout] = useState(null);
 
   useEffect(() => {
     const profile = localStorage.getItem('userProfile');
@@ -205,14 +210,31 @@ function TrainingDashboard() {
       setWorkoutPlan(plan);
     }
 
-    // Clear the new user flag
     if (isNewUser) {
       localStorage.removeItem('isNewUser');
     }
   }, [navigate]);
 
-  const handleCreateWorkout = () => {
-    navigate('/profile-setup');
+  const handleStartWorkout = (workout) => {
+    setActiveWorkout(workout);
+  };
+
+  const handleCompleteWorkout = (workoutData) => {
+    // Save workout data
+    const completedWorkouts = JSON.parse(localStorage.getItem('completedWorkouts') || '{}');
+    const workoutNumber = activeWorkout.day;
+    
+    completedWorkouts[workoutNumber] = {
+      ...workoutData,
+      date: new Date().toISOString()
+    };
+    
+    localStorage.setItem('completedWorkouts', JSON.stringify(completedWorkouts));
+    setActiveWorkout(null);
+  };
+
+  const handleCloseWorkout = () => {
+    setActiveWorkout(null);
   };
 
   if (!userProfile || !workoutPlan) {
@@ -229,43 +251,25 @@ function TrainingDashboard() {
               <div className="empty-state-icon">💪</div>
               <h2>No Workout Plans Yet</h2>
               <p>Create your first personalized workout plan to get started on your fitness journey.</p>
-              <button onClick={handleCreateWorkout} className="create-workout-button">
+              <button onClick={() => navigate('/profile-setup')} className="create-workout-button">
                 Create Workout Plan
               </button>
             </div>
           </main>
-
-          <button onClick={handleCreateWorkout} className="add-workout-button" title="Create new workout plan">
-            +
-          </button>
         </div>
       </Layout>
     );
   }
 
-  const sections = [
-    {
-      id: 1,
-      title: 'Foundation Phase',
-      description: 'Building your base strength and form',
-      lessons: 6,
-      locked: false
-    },
-    {
-      id: 2,
-      title: 'Development Phase',
-      description: 'Increasing intensity and complexity',
-      lessons: 6,
-      locked: false
-    },
-    {
-      id: 3,
-      title: 'Peak Phase',
-      description: 'Maximizing your performance',
-      lessons: 6,
-      locked: false
-    }
-  ];
+  if (activeWorkout) {
+    return (
+      <ActiveWorkout
+        workout={activeWorkout}
+        onComplete={handleCompleteWorkout}
+        onClose={handleCloseWorkout}
+      />
+    );
+  }
 
   return (
     <Layout>
@@ -281,22 +285,32 @@ function TrainingDashboard() {
 
         <main className="dashboard-content">
           {showWorkoutPlan ? (
-            <WorkoutPlan plan={workoutPlan} />
+            <WorkoutPlan 
+              plan={workoutPlan} 
+              onStartWorkout={handleStartWorkout}
+            />
           ) : (
             <div className="sections-grid">
-              {sections.map((section) => (
+              {[1, 2, 3].map((phase) => (
                 <div 
-                  key={section.id} 
-                  className={`section-card ${section.locked ? 'locked' : ''}`}
-                  onClick={() => !section.locked && setShowWorkoutPlan(true)}
+                  key={phase} 
+                  className="section-card"
+                  onClick={() => setShowWorkoutPlan(true)}
                 >
-                  <div className="section-number">{section.id}</div>
+                  <div className="section-number">{phase}</div>
                   <div className="section-info">
-                    <h2>{section.title}</h2>
-                    <p>{section.description}</p>
-                    <span className="lessons-count">{section.lessons} Workouts</span>
+                    <h2>{
+                      phase === 1 ? 'Foundation Phase' :
+                      phase === 2 ? 'Development Phase' :
+                      'Peak Phase'
+                    }</h2>
+                    <p>{
+                      phase === 1 ? 'Building your base strength and form' :
+                      phase === 2 ? 'Increasing intensity and complexity' :
+                      'Maximizing your performance'
+                    }</p>
+                    <span className="lessons-count">6 Workouts</span>
                   </div>
-                  {section.locked && <div className="lock-icon">🔒</div>}
                 </div>
               ))}
             </div>

@@ -78,45 +78,75 @@ function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Clear previous errors
+    setError('');
+    setPasswordError('');
+    setConfirmPasswordError('');
+
+    // Validate terms acceptance
     if (!termsAccepted) {
       setError('Please accept the Terms of Service and Privacy Policy to continue.');
       return;
     }
-    
+
+    // Validate full name
+    if (!formData.fullName.trim()) {
+      setError('Please enter your full name');
+      return;
+    }
+
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      setError('Please enter your email address');
+      return;
+    }
+    if (!emailRegex.test(formData.email.trim())) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    // Validate password
     const passwordError = validatePassword(formData.password);
     if (passwordError) {
       setPasswordError(passwordError);
       return;
     }
 
+    // Validate password confirmation
     if (formData.password !== formData.confirmPassword) {
       setConfirmPasswordError('Passwords do not match');
       return;
     }
 
-    if (!formData.fullName || !formData.email) {
-      setError('Please fill in all fields');
-      return;
-    }
-
     setLoading(true);
-    setError('');
 
     try {
       const { data, error: signUpError } = await signUp(
-        formData.email,
+        formData.email.trim(),
         formData.password,
-        formData.fullName
+        formData.fullName.trim()
       );
 
       if (signUpError) {
-        throw signUpError;
+        // Handle specific signup errors
+        if (signUpError.message.includes('email')) {
+          setError('This email is already registered. Please use a different email or sign in.');
+        } else {
+          throw signUpError;
+        }
+        return;
       }
 
-      // Registration successful
-      navigate('/dashboard');
+      // Store the user's name and set isNewUser flag
+      localStorage.setItem('userName', formData.fullName.trim());
+      localStorage.setItem('isNewUser', 'true');
+
+      // Redirect to profile setup
+      navigate('/profile-setup', { replace: true });
     } catch (err) {
-      setError(err.message || 'An error occurred during registration');
+      setError(err.message || 'An error occurred during registration. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -126,8 +156,12 @@ function Register() {
     <Layout>
       <div className="auth-container">
         <div className="auth-box">
-          <h2>Create Account</h2>
+          <div className="auth-header">
+            <h2>Let's reach your <span className="floating-text">Nexxt</span> level</h2>
+          </div>
+
           {error && <div className="error-message">{error}</div>}
+
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <input
@@ -139,6 +173,7 @@ function Register() {
                 className="auth-input"
               />
             </div>
+
             <div className="form-group">
               <input
                 type="email"
@@ -149,44 +184,51 @@ function Register() {
                 className="auth-input"
               />
             </div>
-            <div className="form-group password-group">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className={`auth-input ${passwordError ? 'error' : ''}`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="toggle-password"
-              >
-                {showPassword ? "Hide" : "Show"}
-              </button>
-              {lastChar && <span className="last-char">{lastChar}</span>}
+
+            <div className="form-group">
+              <div className="password-group">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className={`auth-input ${passwordError ? 'error' : ''}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className={`toggle-password ${showPassword ? 'unlocked' : ''}`}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  data-tooltip={showPassword ? "Hide password" : "Show password"}
+                />
+                {lastChar && <span className="last-char">{lastChar}</span>}
+              </div>
+              {passwordError && <div className="error-message">{passwordError}</div>}
             </div>
-            {passwordError && <div className="error-message">{passwordError}</div>}
-            <div className="form-group password-group">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                id="confirmPassword"
-                placeholder="Confirm Password"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                className={`auth-input ${confirmPasswordError ? 'error' : ''}`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="toggle-password"
-              >
-                {showConfirmPassword ? "Hide" : "Show"}
-              </button>
-              {lastConfirmChar && <span className="last-char">{lastConfirmChar}</span>}
+
+            <div className="form-group">
+              <div className="password-group">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  id="confirmPassword"
+                  placeholder="Confirm Password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  className={`auth-input ${confirmPasswordError ? 'error' : ''}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className={`toggle-password ${showConfirmPassword ? 'unlocked' : ''}`}
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  data-tooltip={showConfirmPassword ? "Hide password" : "Show password"}
+                />
+                {lastConfirmChar && <span className="last-char">{lastConfirmChar}</span>}
+              </div>
+              {confirmPasswordError && <div className="error-message">{confirmPasswordError}</div>}
             </div>
-            {confirmPasswordError && <div className="error-message">{confirmPasswordError}</div>}
+
             <div className="form-group checkbox-group">
               <input
                 type="checkbox"
@@ -199,17 +241,26 @@ function Register() {
                 <Link to="/privacy" className="text-link">Privacy Policy</Link>
               </label>
             </div>
+
             <button 
               type="submit" 
               className="auth-button"
               disabled={loading}
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading ? (
+                <span className="button-content">
+                  <span className="spinner"></span>
+                  Creating Account...
+                </span>
+              ) : (
+                'Create Account'
+              )}
             </button>
           </form>
-          <p className="auth-footer">
-            Already have an account? <Link to="/login" className="signin-link">Sign in</Link>
-          </p>
+
+          <div className="auth-footer">
+            <p>Want to pick up where you left off? <Link to="/login" className="signin-link" style={{ color: '#d4af37' }}>Sign in</Link></p>
+          </div>
         </div>
       </div>
     </Layout>

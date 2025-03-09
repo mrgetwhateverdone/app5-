@@ -86,12 +86,15 @@ body {
 }
 
 .login-button:hover {
-  background-color: #c19f35;
+  background-color: #d4af37;
+  color: black;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
 }
 
 .login-button:active {
   transform: translateY(1px);
-  background-color: #b18f25;
+  background-color: #d4af37;
 }
 
 .main-content {
@@ -424,7 +427,7 @@ body {
 .cta-button {
   display: inline-block;
   background-color: #d4af37;
-  color: black;
+  color: #000000;
   border: none;
   padding: 0.75rem 2rem;
   font-size: 1rem;
@@ -437,14 +440,17 @@ body {
 }
 
 .cta-button:hover {
-  background-color: #c19f35;
+  background-color: #d4af37;
   text-decoration: none;
-  color: black;
+  color: #000000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
 }
 
 .cta-button:active {
   transform: translateY(1px);
-  background-color: #b18f25;
+  background-color: #d4af37;
+  color: #000000;
 }
 
 .benefits-list {
@@ -494,7 +500,7 @@ body {
 
 .feedback-button {
   background-color: #d4af37;
-  color: white;
+  color: black;
   border: none;
   border-radius: 30px;
   padding: 0.9rem 2.2rem;
@@ -507,16 +513,18 @@ body {
 }
 
 .feedback-button:hover {
-  background-color: #c19f35;
+  background-color: #d4af37;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+  color: black;
 }
 
 .feedback-button:active,
 .feedback-button-pressed {
   transform: translateY(1px);
   box-shadow: 0 1px 4px rgba(212, 175, 55, 0.2);
-  background-color: #b18f25;
+  background-color: #d4af37;
+  color: black;
 }
 
 .social-icons-container {
@@ -739,5 +747,42 @@ body {
   .focus-button {
     width: 100%;
     padding: 0.75rem;
+  }
+}
+
+.main-content.app-mode {
+  padding-bottom: 80px;
+  min-height: 100vh;
+  background-color: #f8f9fa;
+}
+
+.app-header.logged-in {
+  background-color: white;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  padding: 1rem;
+}
+
+.app-header.logged-in .header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-header.logged-in .logo {
+  font-weight: 800;
+  font-size: 2rem;
+  font-style: italic;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  color: #000;
+  text-decoration: none;
+}
+
+/* Ensure content doesn't get hidden behind the bottom nav */
+@supports (padding: max(0px)) {
+  .main-content.app-mode {
+    padding-bottom: max(80px, calc(80px + env(safe-area-inset-bottom)));
   }
 }

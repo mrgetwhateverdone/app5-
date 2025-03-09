@@ -20,6 +20,7 @@ import ProfileSetup from './components/ProfileSetup';
 import TrainingDashboard from './components/TrainingDashboard';
 import Profile from './components/Profile';
 import Progress from './components/Progress';
+import ProtectedRoute from './components/ProtectedRoute';
 import './components/Login.css';
 import './components/ProfileSetup.css';
 import './components/Profile.css';
@@ -83,6 +84,7 @@ function App() {
   return (
     <Router>
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<Home />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
@@ -93,10 +95,35 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/profile-setup" element={<ProfileSetup />} />
-        <Route path="/dashboard" element={<TrainingDashboard />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/progress" element={<Progress />} />
+
+        {/* Protected routes */}
+        <Route path="/profile-setup" element={
+          <ProtectedRoute>
+            <ProfileSetup />
+          </ProtectedRoute>
+        } />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <TrainingDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } />
+        <Route path="/progress" element={
+          <ProtectedRoute>
+            <Progress />
+          </ProtectedRoute>
+        } />
+        <Route path="/rehab" element={
+          <ProtectedRoute>
+            <Progress />
+          </ProtectedRoute>
+        } />
+
+        {/* Catch all route */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>

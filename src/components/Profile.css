@@ -1,15 +1,211 @@
 .profile-container {
-  min-height: 100vh;
-  background-color: #ffffff;
-  color: #000000;
+  max-width: 800px;
+  margin: 0 auto;
   padding: 2rem 1rem;
-  padding-bottom: calc(4rem + env(safe-area-inset-bottom));
 }
 
 .profile-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.profile-image-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 1rem;
+}
+
+.profile-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  background: #f0f0f0;
+  border: 3px solid #d4af37;
+}
+
+.profile-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  color: #666;
+  background: #f8f9fa;
+}
+
+.image-upload-label {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: #d4af37;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.image-upload-label:hover {
+  transform: scale(1.1);
+  background: #c19f35;
+}
+
+.upload-icon {
+  font-size: 1.2rem;
+}
+
+.hidden {
+  display: none;
+}
+
+.profile-name {
+  font-size: 1.8rem;
+  color: #333;
+  margin: 1rem 0;
+  font-weight: 600;
+}
+
+.stats-container {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1.5rem;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.stat-value {
+  font-size: 1.2rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.progress-section {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.progress-section h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.progress-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  margin-bottom: 2rem;
+}
+
+.progress-segment {
+  height: 60px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  transform: skew(var(--skew-angle));
+  transition: all 0.3s ease;
+}
+
+.progress-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  transition: width 0.3s ease;
+  opacity: 0.2;
+}
+
+.workout-number {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) skew(calc(var(--skew-angle) * -1));
+  color: #333;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.progress-legend {
   display: flex;
   justify-content: center;
-  margin-bottom: 2rem;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  opacity: 0.2;
+}
+
+@media (max-width: 768px) {
+  .progress-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .stats-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-container {
+    padding: 1rem;
+  }
+
+  .stats-container {
+    grid-template-columns: 1fr;
+  }
+
+  .progress-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .progress-legend {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
 }
 
 .trophy-container {
@@ -41,13 +237,6 @@
   100% { transform: translateX(20px); }
 }
 
-.stats-container {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 2rem;
-  gap: 1rem;
-}
-
 .stat-card {
   background-color: #1a1a1a;
   border-radius: 15px;
@@ -73,11 +262,6 @@
   font-size: 1.5rem;
   font-weight: bold;
   color: #d4af37;
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  color: #888;
 }
 
 .progress-header {
@@ -244,4 +428,135 @@
 .nav-label {
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.progress-segment.completed {
+  transform: skew(var(--skew-angle)) scale(1.02);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.progress-segment.completed:hover {
+  transform: skew(var(--skew-angle)) scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.completed-check {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 0.8rem;
+  color: #fff;
+  background-color: var(--progress-color);
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: skew(calc(var(--skew-angle) * -1));
+}
+
+.workout-details-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.workout-details-content {
+  background-color: white;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.close-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #666;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.close-button:hover {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.workout-exercises {
+  margin-top: 1.5rem;
+}
+
+.exercise-item {
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.exercise-item h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.exercise-sets {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.set-details {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background-color: white;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.workout-date {
+  margin-top: 1.5rem;
+  text-align: right;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 480px) {
+  .workout-details-content {
+    padding: 1.5rem;
+    width: 95%;
+  }
+
+  .exercise-item {
+    padding: 0.75rem;
+  }
+
+  .set-details {
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-start;
+  }
 } 

@@ -50,7 +50,7 @@ function Features() {
 
           <div className="features-highlight">
             <h2>Are you <span className="title-nextt">Nextt</span> ?</h2>
-            <p>Experience collegiate-level training designed specifically for you. This platform combines my athletic experience with proven training methods to help you prevent injuries, improve performance, and achieve your goals.</p>
+            <p>Experience collegiate-level training designed specifically for you. This platform uses scientifically proven training methods to help you improve your performance, prevent nagging injuries, and achieve your goals.</p>
             <Link to="/login" className="cta-button">Start Your Journey</Link>
           </div>
         </div>
