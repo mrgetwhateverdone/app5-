@@ -3,6 +3,12 @@ import { Link, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faInstagram, faXTwitter } from '@fortawesome/free-brands-svg-icons';
 import BottomNav from './BottomNav';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = 'https://rvipmtgsrftkjftslqfc.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ2aXBtdGdzcmZ0a2pmdHNscWZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMTcsImV4cCI6MjA1NzI4NDIxN30.NjrDhn1llA6zyH-gQ9RNRO8Q8WRvRzqHMDTfTd4-0oE';
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 function Layout({ children }) {
   const location = useLocation();
@@ -91,7 +97,7 @@ function Layout({ children }) {
                 <Link to="/contact" className="footer-link">Contact</Link>
               </nav>
             </div>
-            <div className="copyright">© 2025 Nextt. All rights reserved.</div>
+            <div className="copyright"> 2025 Nextt. All rights reserved.</div>
           </footer>
         </>
       )}
