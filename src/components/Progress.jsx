@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Layout from './Layout';
 import './Progress.css';
 
 function Progress() {
+  const location = useLocation();
   const [metrics, setMetrics] = useState({
     totalWeight: 0,
     totalReps: 0,
@@ -31,13 +32,13 @@ function Progress() {
   }, []);
 
   return (
-    <Layout>
+    <Layout location={location}>
       <div className="progress-container">
         <div className="progress-header">
-          <h1>Your Progress</h1>
-          <Link to="/profile" className="back-button">
-            ← Back
+          <Link to="/dashboard" className="back-button-circle">
+            ←
           </Link>
+          <h1>Your Progress</h1>
         </div>
 
         <div className="metrics-grid">
@@ -74,20 +75,7 @@ function Progress() {
           </div>
         </div>
 
-        <nav className="mobile-nav">
-          <Link to="/dashboard" className="nav-item">
-            <span className="nav-icon">🏋️‍♂️</span>
-            <span className="nav-label">Workout</span>
-          </Link>
-          <Link to="/rehab" className="nav-item">
-            <span className="nav-icon">🧰</span>
-            <span className="nav-label">Rehab</span>
-          </Link>
-          <Link to="/profile" className="nav-item">
-            <span className="nav-icon">👤</span>
-            <span className="nav-label">Profile</span>
-          </Link>
-        </nav>
+        {/* Mobile nav removed from Progress component as it will use the BottomNav from Layout */}
       </div>
     </Layout>
   );

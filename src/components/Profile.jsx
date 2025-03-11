@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Layout from './Layout';
 import './Profile.css';
 
 function Profile() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [userProfile, setUserProfile] = useState(null);
   const [profileImage, setProfileImage] = useState(null);
   const [completedWorkouts, setCompletedWorkouts] = useState({});
   const [selectedWorkout, setSelectedWorkout] = useState(null);
+  const [mostImprovedExercise, setMostImprovedExercise] = useState(null);
 
   useEffect(() => {
     const storedProfile = localStorage.getItem('userProfile');
@@ -26,9 +28,76 @@ function Profile() {
     });
 
     if (storedWorkouts) {
-      setCompletedWorkouts(JSON.parse(storedWorkouts));
+      const parsedWorkouts = JSON.parse(storedWorkouts);
+      setCompletedWorkouts(parsedWorkouts);
+      calculateMostImprovedExercise(parsedWorkouts);
     }
   }, [navigate]);
+  
+  const calculateMostImprovedExercise = (workouts) => {
+    // Track the first and last weight for each exercise
+    const exerciseProgress = {};
+    
+    // Iterate through all completed workouts
+    Object.values(workouts).forEach(workout => {
+      if (workout && workout.exercises) {
+        workout.exercises.forEach(exercise => {
+          if (!exerciseProgress[exercise.name]) {
+            exerciseProgress[exercise.name] = {
+              firstWeight: null,
+              lastWeight: null,
+              firstDate: null,
+              lastDate: null,
+              improvement: 0
+            };
+          }
+          
+          // Get the max weight from this exercise's sets
+          const maxWeight = Math.max(...exercise.sets.map(set => parseFloat(set.weight) || 0));
+          
+          // If this is the first time we've seen this exercise or it's earlier than our first record
+          if (!exerciseProgress[exercise.name].firstDate || 
+              new Date(workout.date) < new Date(exerciseProgress[exercise.name].firstDate)) {
+            exerciseProgress[exercise.name].firstWeight = maxWeight;
+            exerciseProgress[exercise.name].firstDate = workout.date;
+          }
+          
+          // If this is the latest record of this exercise
+          if (!exerciseProgress[exercise.name].lastDate || 
+              new Date(workout.date) > new Date(exerciseProgress[exercise.name].lastDate)) {
+            exerciseProgress[exercise.name].lastWeight = maxWeight;
+            exerciseProgress[exercise.name].lastDate = workout.date;
+          }
+        });
+      }
+    });
+    
+    // Calculate improvement for each exercise
+    Object.keys(exerciseProgress).forEach(exerciseName => {
+      const { firstWeight, lastWeight } = exerciseProgress[exerciseName];
+      if (firstWeight !== null && lastWeight !== null) {
+        exerciseProgress[exerciseName].improvement = lastWeight - firstWeight;
+      }
+    });
+    
+    // Find the exercise with the greatest improvement
+    let mostImproved = null;
+    let maxImprovement = 0;
+    
+    Object.entries(exerciseProgress).forEach(([name, data]) => {
+      if (data.improvement > maxImprovement) {
+        maxImprovement = data.improvement;
+        mostImproved = {
+          name,
+          improvement: data.improvement,
+          firstWeight: data.firstWeight,
+          lastWeight: data.lastWeight
+        };
+      }
+    });
+    
+    setMostImprovedExercise(mostImproved);
+  };
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -61,7 +130,7 @@ function Profile() {
   if (!userProfile) return null;
 
   return (
-    <Layout>
+    <Layout location={location}>
       <div className="profile-container">
         <div className="profile-header">
           <div className="profile-image-container">
@@ -108,8 +177,19 @@ function Profile() {
             </div>
           )}
           <div className="stat-item">
-            <span className="stat-label">Focus</span>
-            <span className="stat-value">{userProfile.focus}</span>
+            <span className="stat-label">Most Improved Exercise</span>
+            <span className="stat-value">
+              {mostImprovedExercise ? (
+                <>
+                  {mostImprovedExercise.name}
+                  <span className="improvement-details">
+                    +{mostImprovedExercise.improvement} lbs
+                  </span>
+                </>
+              ) : (
+                'Not enough data yet'
+              )}
+            </span>
           </div>
         </div>
 
@@ -185,6 +265,21 @@ function Profile() {
             </div>
           </div>
         )}
+        
+        <nav className="mobile-nav">
+          <Link to="/dashboard" className={`nav-item ${location.pathname === '/dashboard' ? 'active' : ''}`}>
+            <span className="nav-icon">🏋️‍♂️</span>
+            <span className="nav-label">Workout</span>
+          </Link>
+          <Link to="/rehab" className={`nav-item ${location.pathname === '/rehab' ? 'active' : ''}`}>
+            <span className="nav-icon">🧰</span>
+            <span className="nav-label">Rehab</span>
+          </Link>
+          <Link to="/profile" className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`}>
+            <span className="nav-icon">👤</span>
+            <span className="nav-label">Profile</span>
+          </Link>
+        </nav>
       </div>
     </Layout>
   );

@@ -8,7 +8,7 @@ function PrivacyPolicy() {
       <div className="privacy-container">
         <div className="privacy-content">
         <h1>Privacy Policy</h1>
-        <p className="last-updated">Last updated: March 5, 2025</p>
+        <p className="last-updated">Last updated: March 11, 2025</p>
         
         <p>I take your privacy seriously. This Privacy Policy outlines my practices concerning the handling of user data in accordance with Missouri state law and other applicable regulations.</p>
         
@@ -62,7 +62,7 @@ function PrivacyPolicy() {
 
         <section>
           <h2>Changes to Privacy Policy</h2>
-          <p>I will notify users of any changes to this privacy policy via email and/or in-app notifications. As a Missouri resident and individual developer, I will ensure all policy updates comply with Missouri privacy laws and regulations.</p>
+          <p>I will notify you of any changes to this privacy policy via email and/or in-app notifications. As a Missouri resident and individual developer, I will ensure all policy updates comply with Missouri privacy laws and regulations.</p>
         </section>
 
         <section>

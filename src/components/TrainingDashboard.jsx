@@ -1,108 +1,155 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import Layout from './Layout';
 import './TrainingDashboard.css';
 import ActiveWorkout from './ActiveWorkout';
+import WorkoutCreator from './WorkoutCreator';
+import { exerciseDatabase } from '../exerciseDatabase';
 
 function generateWorkoutPlan(userProfile) {
   if (!userProfile) return null;
 
   const { sport, position, heightFeet, heightInches, weight, focus } = userProfile;
   const height = (parseInt(heightFeet) * 12) + parseInt(heightInches);
-  const isHeavy = weight > 180;
-  const isTall = height > 72;
-  const bodyType = `${isTall ? 'Taller' : 'Shorter'} & ${isHeavy ? 'Heavier' : 'Lighter'}`;
-
-  // Exercise database based on provided lists
-  const exerciseDatabase = {
-    basketball: {
-      strength: {
-        baseline: ['Squats', 'Bench Press', 'Deadlifts'],
-        'Taller & Heavier': ['Leg Press', 'Seated Row', 'Overhead Press'],
-        'Shorter & Heavier': ['Hack Squats', 'Romanian Deadlifts', 'Incline Bench Press'],
-        'Taller & Lighter': ['Lunges', 'Pull-Ups', 'Dumbbell shoulder press'],
-        'Shorter & Lighter': ['Goblet Squats', 'Bent-Over Rows', 'Push-Ups with Weight Vest'],
-        Guard: ['Calf Raises', 'Planks', 'Russian Twists', 'Single-Leg Squats', 'Dumbbell Snatches'],
-        Forward: ['Step-Ups', 'Lateral Raises', 'Chest Press', 'Tricep Dips', 'Barbell Curl'],
-        Center: ['Heavy Squats', 'Chest Press', 'Power Cleans', "Farmer's Walk", 'Trap Bar Deadlifts']
-      },
-      plyometric: {
-        baseline: ['Box Jumps', 'Depth Jumps', 'Lateral Bounds'],
-        'Taller & Heavier': ['Medicine Ball Slams', 'Standing Long Jumps', 'Low-Height Box Jumps'],
-        'Shorter & Heavier': ['Tuck Jumps', 'Broad Jumps', 'Single-Leg Hops'],
-        'Taller & Lighter': ['Skater Jumps', 'Plyometric Push-Ups', 'Hurdle Jumps'],
-        'Shorter & Lighter': ['Jump Squats', 'Medicine Ball Throws', 'Agility Ladder Drills'],
-        Guard: ['Quick Feet Drills', 'Lateral Quick Steps', 'Sprint Starts'],
-        Forward: ['Multi-Directional Jumps', 'Overhead Medicine Ball Throws', 'Shuttle Runs'],
-        Center: ['Depth Jumps with Immediate Vertical Jump', 'Box Step-Ups with Jump', 'Sled Pushes']
-      }
-    },
-    football: {
-      strength: {
-        baseline: ['Squats', 'Bench Press', 'Power Cleans'],
-        'Taller & Heavier': ['Leg Press', 'Seated Cable Rows', 'shoulder press'],
-        'Shorter & Heavier': ['Deadlifts', 'Incline Bench Press', 'Bulgarian Split Squats'],
-        'Taller & Lighter': ['Lunges', 'Pull-Ups', 'Hanging Leg Raises'],
-        'Shorter & Lighter': ['Goblet Squats', 'Dumbbell Bench Press', 'Planks with shoulder taps'],
-        Quarterback: ['Rotational Cable Lifts', 'Single-Arm Dumbbell Press', 'Medicine Ball Throws'],
-        'Skill Position': ['Hip Thrusts', 'Lateral Lunges', 'Box Jumps', 'Sled Pushes'],
-        Linebacker: ['Romanian Deadlifts', 'Incline Press', 'Sled Pushes', 'Turkish Get-Ups'],
-        Lineman: ['Heavy Squats', 'Heavy Bench Press', 'Power Cleans', "Farmer's Walk"]
-      },
-      plyometric: {
-        baseline: ['Box Jumps', 'Broad Jumps', 'Agility Ladder Drills'],
-        'Taller & Heavier': ['Medicine Ball Chest Pass', 'Standing Triple Jump', 'Low Box Depth Jumps'],
-        'Shorter & Heavier': ['Tuck Jumps', 'Lateral Bounds', 'Single-Leg Hops'],
-        'Taller & Lighter': ['Skater Jumps', 'Plyometric Push-Ups', 'Hurdle Jumps'],
-        'Shorter & Lighter': ['Jump Squats', 'Medicine Ball Slams', 'Agility Cone Drills'],
-        Quarterback: ['Medicine Ball Rotational Throws', 'Quick Feet Drills', 'Reaction Drills'],
-        'Skill Position': ['Lateral Jumps', 'Clap Push-Ups', 'Shuttle Runs'],
-        Linebacker: ['Box Jumps with Lateral Movement', 'Medicine Ball Slams', 'Sled Pushes'],
-        Lineman: ['Sled Pushes', 'Heavy Medicine Ball Throws', 'Battle Ropes']
-      }
-    }
-    // ... other sports would be defined similarly
-  };
+  
+  // Body type assessment based on height and weight
+  const isHeavy = weight > 230;
+  const isTall = height > 72.5; // 6'0.5"
+  
+  // Determine body type
+  let bodyType;
+  if (isHeavy && isTall) bodyType = 'Taller & Heavier';
+  else if (isHeavy && !isTall) bodyType = 'Shorter & Heavier';
+  else if (!isHeavy && isTall) bodyType = 'Taller & Lighter';
+  else bodyType = 'Shorter & Lighter';
+  
+  console.log(`Generating workout plan for ${sport}, position: ${position}, body type: ${bodyType}, focus: ${focus}`);
 
   // Get exercises for the user's sport and profile
-  const sportExercises = exerciseDatabase[sport] || exerciseDatabase.basketball; // Default to basketball if sport not found
-  const exerciseType = focus === 'Strength' ? 'strength' : 'plyometric';
+  const sportExercises = exerciseDatabase[sport] || exerciseDatabase['General Workout'];
+  const exerciseType = focus.toLowerCase() === 'strength' ? 'strength' : 'explosiveness';
+  
+  console.log('Selected sport:', sport);
+  console.log('Exercise type:', exerciseType);
+  console.log('Available exercises for sport and type:', sportExercises[exerciseType]);
   
   // Combine exercises based on body type and position
   const baselineExercises = sportExercises[exerciseType].baseline || [];
   const bodyTypeExercises = sportExercises[exerciseType][bodyType] || [];
   const positionExercises = position ? (sportExercises[exerciseType][position] || []) : [];
   
-  const allExercises = [...baselineExercises, ...bodyTypeExercises, ...positionExercises];
-
+  console.log('Baseline exercises:', baselineExercises);
+  console.log('Body type exercises:', bodyTypeExercises);
+  console.log('Position exercises:', positionExercises);
+  
+  // Create a pool of exercises with priority to position-specific exercises
+  let allExercises = [...baselineExercises, ...bodyTypeExercises, ...positionExercises];
+  
+  // Remove duplicates
+  allExercises = [...new Set(allExercises)];
+  
+  console.log('All exercises after combining:', allExercises);
+  
+  // Ensure we have enough exercises
+  if (allExercises.length < 9) {
+    console.log('Not enough exercises, adding general exercises');
+    const generalExercises = exerciseDatabase['General Workout'][exerciseType].baseline || [];
+    console.log('General exercises to add:', generalExercises);
+    allExercises = [...allExercises, ...generalExercises];
+    allExercises = [...new Set(allExercises)]; // Remove duplicates again
+    console.log('Final exercise pool after adding general exercises:', allExercises);
+  }
+  
   // Generate 6-week program
   const program = {
     weeks: Array(6).fill().map((_, weekIndex) => {
-      // Progressive overload pattern
-      const intensity = weekIndex < 2 ? 'Foundation' : weekIndex < 4 ? 'Development' : 'Peak';
-      const sets = weekIndex < 2 ? 3 : weekIndex < 4 ? 4 : 5;
-      const reps = focus === 'Strength' 
-        ? (weekIndex < 2 ? '12-15' : weekIndex < 4 ? '8-10' : '4-6')
-        : (weekIndex < 2 ? '10-12' : weekIndex < 4 ? '8-10' : '6-8');
+      // Progressive overload pattern based on focus and week
+      let intensity, sets, reps, rest;
+      
+      if (exerciseType === 'strength') {
+        if (weekIndex < 2) {
+          // Weeks 1-2: Heavy weight, low reps
+          intensity = 'Foundation';
+          sets = 4;
+          reps = '6-8';
+          rest = '90-120 sec';
+        } else if (weekIndex < 4) {
+          // Weeks 3-4: Medium weight, medium reps
+          intensity = 'Development';
+          sets = 3;
+          reps = '8-12';
+          rest = '60-90 sec';
+        } else {
+          // Weeks 5-6: Medium-heavy weight, medium-low reps
+          intensity = 'Peak';
+          sets = 5;
+          reps = '5-8';
+          rest = '75-90 sec';
+        }
+      } else { // explosiveness
+        if (weekIndex < 2) {
+          // Weeks 1-2: Low-level plyometrics
+          intensity = 'Foundation';
+          sets = 3;
+          reps = '8-10';
+          rest = '60-90 sec';
+        } else if (weekIndex < 4) {
+          // Weeks 3-4: Medium-level plyometrics
+          intensity = 'Development';
+          sets = 4;
+          reps = '6-8';
+          rest = '90-120 sec';
+        } else {
+          // Weeks 5-6: High-level plyometrics
+          intensity = 'Peak';
+          sets = 5;
+          reps = '4-6';
+          rest = '120-150 sec';
+        }
+      }
 
-      return Array(3).fill().map((_, dayIndex) => {
-        // Rotate through exercises to maintain variety
-        const dayExercises = allExercises
-          .slice(dayIndex * 3, (dayIndex * 3) + 5)
-          .filter(Boolean);
-
-        return {
-          day: dayIndex + 1,
-          exercises: dayExercises,
-          sets,
-          reps,
-          intensity,
-          notes: `${intensity} Phase - Focus on ${focus === 'Strength' ? 'proper form and controlled movement' : 'explosive power and quick movements'}`
-        };
-      });
+      // Create the weekly workout structure
+      return {
+        weekNumber: weekIndex + 1,
+        days: [
+          {
+            dayNumber: 1,
+            exercises: allExercises.slice(0, Math.min(4, allExercises.length)).map(exercise => ({
+              name: exercise,
+              sets,
+              reps,
+              intensity,
+              rest
+            }))
+          },
+          {
+            dayNumber: 3,
+            exercises: allExercises.slice(Math.min(4, allExercises.length), Math.min(8, allExercises.length)).map(exercise => ({
+              name: exercise,
+              sets,
+              reps,
+              intensity,
+              rest
+            }))
+          },
+          {
+            dayNumber: 5,
+            exercises: [
+              ...allExercises.slice(0, Math.min(2, allExercises.length)),
+              ...allExercises.slice(Math.min(8, allExercises.length))
+            ].map(exercise => ({
+              name: exercise,
+              sets,
+              reps,
+              intensity,
+              rest
+            }))
+          }
+        ]
+      };
     })
   };
-
+  
   return program;
 }
 
@@ -194,20 +241,40 @@ function WorkoutPlan({ plan, onStartWorkout }) {
 
 function TrainingDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [workoutPlan, setWorkoutPlan] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [showWorkoutPlan, setShowWorkoutPlan] = useState(false);
   const [activeWorkout, setActiveWorkout] = useState(null);
+  const [showWorkoutCreator, setShowWorkoutCreator] = useState(false);
+  const [hasWorkoutPlan, setHasWorkoutPlan] = useState(false);
 
   useEffect(() => {
     const profile = localStorage.getItem('userProfile');
     const isNewUser = localStorage.getItem('isNewUser');
+    const workoutCreated = localStorage.getItem('workoutCreated');
+    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
     
     if (profile) {
       const parsedProfile = JSON.parse(profile);
       setUserProfile(parsedProfile);
-      const plan = generateWorkoutPlan(parsedProfile);
-      setWorkoutPlan(plan);
+      
+      // Check if user has completed onboarding
+      if (!onboardingCompleted) {
+        navigate('/onboarding');
+        return;
+      }
+      
+      // Check if user has created a workout plan
+      if (parsedProfile.focus && workoutCreated) {
+        const plan = generateWorkoutPlan(parsedProfile);
+        setWorkoutPlan(plan);
+        setHasWorkoutPlan(true);
+      }
+    } else {
+      // No profile found, redirect to login
+      navigate('/login');
+      return;
     }
 
     if (isNewUser) {
@@ -236,10 +303,78 @@ function TrainingDashboard() {
   const handleCloseWorkout = () => {
     setActiveWorkout(null);
   };
+  
+  const handleOpenWorkoutCreator = () => {
+    setShowWorkoutCreator(true);
+  };
+  
+  const handleCloseWorkoutCreator = () => {
+    setShowWorkoutCreator(false);
+  };
+  
+  const handleCreateWorkout = (updatedProfile) => {
+    try {
+      console.log('Creating workout with profile:', updatedProfile);
+      
+      // Generate a new workout plan with the updated profile
+      const newPlan = generateWorkoutPlan(updatedProfile);
+      console.log('Generated workout plan:', newPlan);
+      
+      if (!newPlan) {
+        console.error('Failed to generate workout plan');
+        return;
+      }
+      
+      // Update state
+      setUserProfile(updatedProfile);
+      setWorkoutPlan(newPlan);
+      setHasWorkoutPlan(true);
+      setShowWorkoutCreator(false);
+      
+      // Save the updated profile to localStorage
+      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+      
+      // Mark that a workout has been created
+      localStorage.setItem('workoutCreated', 'true');
+      
+      // Initialize workout progress tracking if it doesn't exist
+      if (!localStorage.getItem('completedWorkouts')) {
+        localStorage.setItem('completedWorkouts', JSON.stringify({}));
+      }
+      
+      console.log('Workout plan created and saved successfully');
+    } catch (error) {
+      console.error('Error creating workout plan:', error);
+    }
+  };
 
-  if (!userProfile || !workoutPlan) {
+  if (!userProfile) {
     return (
-      <Layout>
+      <Layout location={location}>
+        <div className="training-dashboard">
+          <header className="dashboard-header">
+            <h1>Welcome to Your Dashboard</h1>
+            <p>Get started by creating your first workout plan</p>
+          </header>
+
+          <main className="dashboard-content empty-state">
+            <div className="empty-state-content">
+              <div className="empty-state-icon">💪</div>
+              <h2>No Profile Set Up</h2>
+              <p>Please complete your profile setup to get started.</p>
+              <button onClick={() => navigate('/profile-setup')} className="create-workout-button">
+                Set Up Profile
+              </button>
+            </div>
+          </main>
+        </div>
+      </Layout>
+    );
+  }
+  
+  if (!hasWorkoutPlan) {
+    return (
+      <Layout location={location}>
         <div className="training-dashboard">
           <header className="dashboard-header">
             <h1>Welcome to Your Dashboard</h1>
@@ -251,12 +386,20 @@ function TrainingDashboard() {
               <div className="empty-state-icon">💪</div>
               <h2>No Workout Plans Yet</h2>
               <p>Create your first personalized workout plan to get started on your fitness journey.</p>
-              <button onClick={() => navigate('/profile-setup')} className="create-workout-button">
-                Create Workout Plan
+              <button onClick={handleOpenWorkoutCreator} className="create-workout-button gold-button">
+                <span className="plus-icon">+</span> Create Workout Plan
               </button>
             </div>
           </main>
         </div>
+        
+        {showWorkoutCreator && (
+          <WorkoutCreator 
+            userProfile={userProfile}
+            onCreateWorkout={handleCreateWorkout}
+            onCancel={handleCloseWorkoutCreator}
+          />
+        )}
       </Layout>
     );
   }
@@ -272,10 +415,15 @@ function TrainingDashboard() {
   }
 
   return (
-    <Layout>
+    <Layout location={location}>
       <div className="training-dashboard">
         <header className="dashboard-header">
-          <h1>Your Training Journey</h1>
+          <div className="header-top">
+            <h1>Your Training Journey</h1>
+            <button onClick={handleOpenWorkoutCreator} className="create-new-workout-button" title="Create new workout plan">
+              <span className="plus-icon">+</span>
+            </button>
+          </div>
           <div className="profile-info">
             <p>Welcome, {userProfile.name}!</p>
             <p>{userProfile.sport} - {userProfile.position}</p>
@@ -295,7 +443,15 @@ function TrainingDashboard() {
                 <div 
                   key={phase} 
                   className="section-card"
-                  onClick={() => setShowWorkoutPlan(true)}
+                  onClick={() => {
+                    // Ensure we have a workout plan before showing it
+                    if (workoutPlan && workoutPlan.weeks && workoutPlan.weeks.length > 0) {
+                      setShowWorkoutPlan(true);
+                    } else {
+                      // If no workout plan exists, create one
+                      handleOpenWorkoutCreator();
+                    }
+                  }}
                 >
                   <div className="section-number">{phase}</div>
                   <div className="section-info">
@@ -310,6 +466,7 @@ function TrainingDashboard() {
                       'Maximizing your performance'
                     }</p>
                     <span className="lessons-count">6 Workouts</span>
+                    <button className="view-workouts-button">View Workouts</button>
                   </div>
                 </div>
               ))}
@@ -332,6 +489,14 @@ function TrainingDashboard() {
           </Link>
         </nav>
       </div>
+      
+      {showWorkoutCreator && (
+        <WorkoutCreator 
+          userProfile={userProfile}
+          onCreateWorkout={handleCreateWorkout}
+          onCancel={handleCloseWorkoutCreator}
+        />
+      )}
     </Layout>
   );
 }

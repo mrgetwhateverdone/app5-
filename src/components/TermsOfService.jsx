@@ -8,7 +8,7 @@ function TermsOfService() {
       <div className="terms-container">
         <div className="terms-content">
         <h1>Terms of Service</h1>
-        <p className="last-updated">Last updated: March 6, 2025</p>
+        <p className="last-updated">Last updated: March 11, 2025</p>
         
         <p>Welcome to my application. By accessing or using it, you agree to be bound by these Terms of Service.</p>
 
@@ -66,12 +66,12 @@ function TermsOfService() {
         </section>
 
         <section>
-          <h2>9. Changes to Terms</h2>
-          <p>I reserve the right to modify these terms at any time. I will notify users of any changes via email and/or in-app notifications. Continued use of the app after changes constitutes acceptance of the new terms.</p>
+          <h2>10. Changes to Terms</h2>
+          <p>I reserve the right to modify these terms at any time. I will notify you of any changes via email and/or in-app notifications. Continued use of the app after changes constitutes acceptance of the new terms.</p>
         </section>
 
         <section>
-          <h2>10. Dispute Resolution and Assumption of Risk</h2>
+          <h2>11. Dispute Resolution and Assumption of Risk</h2>
           <p>Any dispute arising from or relating to these Terms shall be resolved through binding arbitration in accordance with the rules of the American Arbitration Association. The arbitration shall be conducted in Missouri, and judgment on the award may be entered in any court having jurisdiction thereof. For Missouri residents, arbitration proceedings will be conducted in accordance with Missouri Revised Statutes Chapter 435 (Arbitration).</p>
           <p>YOU UNDERSTAND THAT BY AGREEING TO THESE TERMS, YOU ARE WAIVING YOUR RIGHT TO A JURY TRIAL OR TO PARTICIPATE IN A CLASS ACTION LAWSUIT.</p>
           <p>Notwithstanding the foregoing, you may bring an individual action in Missouri small claims court (for claims up to $5,000) and certain claims may not be subject to arbitration as a matter of law. Missouri residents retain all rights provided under Missouri consumer protection laws, including but not limited to the Missouri Merchandising Practices Act (Chapter 407, RSMo). Nothing in these Terms shall be construed to waive any rights that cannot be waived under Missouri law.</p>
@@ -84,15 +84,8 @@ function TermsOfService() {
         </section>
 
         <section>
-          <h2>12. Contact and Business Information</h2>
-          <p>If you have any questions about these Terms of Service, please contact us at: <a href="mailto:support@nexttapp.com">support@nexttapp.com</a></p>
-          <p>Our business address:</p>
-          <address>
-            Nextt, LLC<br />
-            1234 Innovation Drive<br />
-            Kansas City, MO 64108<br />
-            United States
-          </address>
+          <h2>12. Contact Information</h2>
+          <p>If you have any questions about these Terms of Service, please contact me at: <a href="mailto:support@nexttapp.com">support@nexttapp.com</a></p>
         </section>
         </div>
       </div>

@@ -2,8 +2,9 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './BottomNav.css';
 
-function BottomNav() {
-  const location = useLocation();
+function BottomNav({ location: propLocation }) {
+  const routerLocation = useLocation();
+  const location = propLocation || routerLocation;
 
   return (
     <nav className="bottom-nav">
@@ -18,7 +19,7 @@ function BottomNav() {
         to="/rehab" 
         className={`nav-item ${location.pathname === '/rehab' ? 'active' : ''}`}
       >
-        <span className="nav-icon">🏥</span>
+        <span className="nav-icon">💉</span>
         <span className="nav-text">Rehab</span>
       </Link>
       <Link 
@@ -26,7 +27,7 @@ function BottomNav() {
         className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`}
       >
         <span className="nav-icon">👤</span>
-        <span className="nav-text">Profile</span>
+        <span className="nav-text">Me</span>
       </Link>
     </nav>
   );

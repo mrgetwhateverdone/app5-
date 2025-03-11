@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import './ActiveWorkout.css';
+import Layout from './Layout';
 
 function ActiveWorkout({ workout, onComplete, onClose }) {
-  const [exercises, setExercises] = useState(workout.exercises.map(exercise => ({
-    name: exercise,
-    sets: [],
-    type: 'weighted', // or 'timed'
-    isCustom: false
-  })));
+  const [exercises, setExercises] = useState(workout && workout.exercises ? 
+    workout.exercises.map(exercise => ({
+      name: exercise.name || exercise,
+      sets: [],
+      type: 'weighted', // or 'timed'
+      isCustom: false
+    })) : []);
   const [customExercises, setCustomExercises] = useState([]);
   const [showAddExercise, setShowAddExercise] = useState(false);
   const [newExercise, setNewExercise] = useState({
@@ -167,12 +169,31 @@ function ActiveWorkout({ workout, onComplete, onClose }) {
     return matches;
   };
 
+  // Safety check for missing workout data
+  if (!workout || !workout.day) {
+    return (
+      <Layout>
+        <div className="active-workout error-state">
+          <div className="workout-header">
+            <button className="close-button" onClick={onClose}>×</button>
+            <h2>Workout Error</h2>
+          </div>
+          <div className="error-message">
+            <p>There was a problem loading your workout. Please go back and try again.</p>
+            <button className="primary-button" onClick={onClose}>Return to Dashboard</button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
-    <div className="active-workout">
-      <div className="workout-header">
-        <button className="close-button" onClick={onClose}>×</button>
-        <h2>Workout {workout.day}</h2>
-      </div>
+    <Layout>
+      <div className="active-workout">
+        <div className="workout-header">
+          <button className="close-button" onClick={onClose}>×</button>
+          <h2>Workout {workout.day}</h2>
+        </div>
 
       {showAddExercise ? (
         <div className="add-exercise-form">
@@ -276,7 +297,8 @@ function ActiveWorkout({ workout, onComplete, onClose }) {
         </>
       )}
     </div>
+    </Layout>
   );
 }
 
-export default ActiveWorkout; 
+export default ActiveWorkout;

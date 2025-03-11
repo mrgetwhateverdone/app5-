@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Layout from './Layout';
 import './Login.css';
@@ -13,11 +13,21 @@ function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [lastChar, setLastChar] = useState('');
+  const lastCharTimerRef = useRef(null);
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
     setError(''); // Clear any previous errors
+
+    // Show last character for password field
+    if (id === 'password' && value.length > 0) {
+      const lastCharacter = value[value.length - 1];
+      setLastChar(lastCharacter);
+      clearTimeout(lastCharTimerRef.current);
+      lastCharTimerRef.current = setTimeout(() => setLastChar(''), 1000);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -64,27 +74,18 @@ function Login() {
 
       console.log('Login successful');
       
-      // Set current user in localStorage
-      localStorage.setItem('currentUser', JSON.stringify({
+      // Set current user and profile in localStorage
+      const userProfile = {
         id: user.id,
         email: user.email,
-        fullName: user.fullName
-      }));
+        fullName: user.fullName,
+        createdAt: user.createdAt
+      };
 
-      // Set userName for backward compatibility
+      localStorage.setItem('currentUser', JSON.stringify(userProfile));
       localStorage.setItem('userName', user.fullName);
+      localStorage.setItem('userProfile', JSON.stringify(userProfile));
       
-      // Check for user profile
-      const userProfile = localStorage.getItem('userProfile');
-      console.log('User profile from localStorage:', userProfile ? 'Found' : 'Not found');
-
-      if (!userProfile) {
-        console.log('Redirecting to profile setup');
-        // If no profile exists, redirect to profile setup
-        navigate('/profile-setup', { replace: true });
-        return;
-      }
-
       // Get the intended destination from location state, or default to dashboard
       const from = location.state?.from?.pathname || '/dashboard';
       console.log('Redirecting to:', from);
@@ -138,6 +139,7 @@ function Login() {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   data-tooltip={showPassword ? "Hide password" : "Show password"}
                 />
+                <span className="last-char" style={{opacity: lastChar ? 1 : 0, transition: 'opacity 0.5s'}}>{lastChar}</span>
               </div>
             </div>
 

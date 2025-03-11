@@ -17,14 +17,17 @@ import Register from './components/Register';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import ProfileSetup from './components/ProfileSetup';
+import UserOnboarding from './components/UserOnboarding';
 import TrainingDashboard from './components/TrainingDashboard';
 import Profile from './components/Profile';
 import Progress from './components/Progress';
+import Rehab from './components/Rehab';
 import ProtectedRoute from './components/ProtectedRoute';
 import './components/Login.css';
 import './components/ProfileSetup.css';
 import './components/Profile.css';
 import './components/Progress.css';
+import './components/Rehab.css';
 
 function Home() {
   return (
@@ -97,6 +100,11 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Protected routes */}
+        <Route path="/onboarding" element={
+          <ProtectedRoute>
+            <UserOnboarding />
+          </ProtectedRoute>
+        } />
         <Route path="/profile-setup" element={
           <ProtectedRoute>
             <ProfileSetup />
@@ -119,7 +127,7 @@ function App() {
         } />
         <Route path="/rehab" element={
           <ProtectedRoute>
-            <Progress />
+            <Rehab />
           </ProtectedRoute>
         } />
 

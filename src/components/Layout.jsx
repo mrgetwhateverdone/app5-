@@ -7,7 +7,7 @@ import BottomNav from './BottomNav';
 function Layout({ children }) {
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const publicRoutes = ['/', '/login', '/register', '/features', '/privacy', '/terms', '/contact', '/feedback'];
+  const publicRoutes = ['/', '/login', '/register', '/privacy', '/terms', '/contact', '/feedback'];
   const isPublicRoute = publicRoutes.includes(location.pathname);
 
   useEffect(() => {
@@ -22,12 +22,18 @@ function Layout({ children }) {
       <header className={`app-header ${isAuthenticated && !isPublicRoute ? 'logged-in' : ''}`}>
         <div className="header-content">
           {isAuthenticated && !isPublicRoute ? (
-            <Link to="/dashboard" className="logo">Nextt</Link>
+            <>
+              <div className="header-left">
+                <span className="logo" style={{ color: '#d4af37', cursor: 'default' }}>Nextt</span>
+              </div>
+              <div className="header-right">
+                <Link to="/progress" className="nav-link" style={{ fontSize: '1.5em' }}>📈</Link>
+              </div>
+            </>
           ) : (
             <>
               <Link to="/" className="logo">Nextt</Link>
               <nav className="nav-links">
-                <Link to="/features" className="nav-link">Features</Link>
                 <Link to="/login" className="login-button">Login</Link>
               </nav>
             </>
@@ -84,13 +90,13 @@ function Layout({ children }) {
                 <Link to="/contact" className="footer-link">Contact</Link>
               </nav>
             </div>
-            <div className="copyright">© 2024 Nextt™. All rights reserved.</div>
+            <div className="copyright">© 2025 Nextt. All rights reserved.</div>
           </footer>
         </>
       )}
 
-      {/* Bottom navigation for authenticated users */}
-      {isAuthenticated && !isPublicRoute && <BottomNav />}
+      {/* Bottom navigation for authenticated users - always show on authenticated pages */}
+      {isAuthenticated && <BottomNav location={location} />}
     </div>
   );
 }

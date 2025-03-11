@@ -11,11 +11,19 @@
 .dashboard-header {
   text-align: center;
   margin-bottom: 2rem;
-  padding: 2rem;
+  padding: 1.5rem;
   background: white;
   border-radius: 15px;
   color: black;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
 .dashboard-header h1 {
@@ -121,6 +129,25 @@
   color: black;
 }
 
+.view-workouts-button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #d4af37;
+  color: black;
+  border: none;
+  border-radius: 20px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.view-workouts-button:hover {
+  background-color: #b18f25;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 .lock-icon {
   position: absolute;
   top: 1rem;
@@ -165,6 +192,47 @@
 .nav-label {
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.create-new-workout-button {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: #d4af37;
+  color: black;
+  border: none;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.4);
+  transition: all 0.3s ease;
+  margin-left: 10px;
+  font-weight: bold;
+}
+
+.create-new-workout-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.6);
+}
+
+.plus-icon {
+  font-weight: bold;
+  line-height: 1;
+}
+
+.gold-button {
+  background-color: #d4af37;
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.gold-button:hover {
+  background-color: #c19f35;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
 }
 
 /* Workout Plan Styles */
@@ -233,6 +301,7 @@
   padding: 2rem;
   background: #f8f9fa;
   border-radius: 15px;
+  color: #000000;
 }
 
 .workout-header {
@@ -306,6 +375,7 @@
   border-radius: 10px;
   margin-bottom: 0.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  color: #000000;
 }
 
 .exercise-number {
@@ -326,7 +396,7 @@
   background: white;
   border-radius: 10px;
   margin-bottom: 2rem;
-  color: #666;
+  color: #333;
 }
 
 .start-workout-button {

@@ -152,8 +152,17 @@ function Register() {
         fullName: newUser.fullName
       }));
 
-      // Redirect to profile setup
-      navigate('/profile-setup', { replace: true });
+      // Set required auth data
+      localStorage.setItem('userName', newUser.fullName);
+      localStorage.setItem('userProfile', JSON.stringify({
+        id: newUser.id,
+        email: newUser.email,
+        fullName: newUser.fullName,
+        createdAt: newUser.createdAt
+      }));
+
+      // Redirect to onboarding
+      navigate('/onboarding', { replace: true });
     } catch (err) {
       setError('An error occurred during registration. Please try again.');
     } finally {
@@ -211,7 +220,7 @@ function Register() {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   data-tooltip={showPassword ? "Hide password" : "Show password"}
                 />
-                {lastChar && <span className="last-char">{lastChar}</span>}
+                <span className="last-char" style={{opacity: lastChar ? 1 : 0, transition: 'opacity 0.5s'}}>{lastChar}</span>
               </div>
               {passwordError && <div className="error-message">{passwordError}</div>}
             </div>
@@ -233,7 +242,7 @@ function Register() {
                   aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                   data-tooltip={showConfirmPassword ? "Hide password" : "Show password"}
                 />
-                {lastConfirmChar && <span className="last-char">{lastConfirmChar}</span>}
+                <span className="last-char" style={{opacity: lastConfirmChar ? 1 : 0, transition: 'opacity 0.5s'}}>{lastConfirmChar}</span>
               </div>
               {confirmPasswordError && <div className="error-message">{confirmPasswordError}</div>}
             </div>
@@ -246,8 +255,7 @@ function Register() {
                 onChange={(e) => setTermsAccepted(e.target.checked)}
               />
               <label htmlFor="terms">
-                I accept the <Link to="/terms" className="text-link">Terms of Service</Link> and{' '}
-                <Link to="/privacy" className="text-link">Privacy Policy</Link>
+                I accept the <Link to="/terms" className="text-link">Terms of Service</Link> and <Link to="/privacy" className="text-link">Privacy Policy</Link>
               </label>
             </div>
 
