@@ -155,6 +155,16 @@ function Profile() {
             </div>
           </div>
           <h1 className="profile-name">{userProfile.name}</h1>
+          <button className="logout-button" onClick={() => {
+            // Save any pending data
+            localStorage.removeItem('userProfile');
+            localStorage.removeItem('userName');
+            // Navigate to home page
+            navigate('/');
+          }}>
+            <span className="logout-icon">🔒</span>
+            Log Out
+          </button>
         </div>
 
         <div className="stats-container">
@@ -272,8 +282,8 @@ function Profile() {
             <span className="nav-label">Workout</span>
           </Link>
           <Link to="/rehab" className={`nav-item ${location.pathname === '/rehab' ? 'active' : ''}`}>
-            <span className="nav-icon">🧰</span>
-            <span className="nav-label">Rehab</span>
+            <span className="nav-icon">🤕</span>
+            <span className="nav-label">Training Room</span>
           </Link>
           <Link to="/profile" className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`}>
             <span className="nav-icon">👤</span>

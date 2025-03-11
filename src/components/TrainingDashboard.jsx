@@ -386,8 +386,8 @@ function TrainingDashboard() {
               <div className="empty-state-icon">💪</div>
               <h2>No Workout Plans Yet</h2>
               <p>Create your first personalized workout plan to get started on your fitness journey.</p>
-              <button onClick={handleOpenWorkoutCreator} className="create-workout-button gold-button">
-                <span className="plus-icon">+</span> Create Workout Plan
+              <button onClick={handleOpenWorkoutCreator} className="create-workout-button">
+                Create Workout Plan
               </button>
             </div>
           </main>
@@ -480,8 +480,8 @@ function TrainingDashboard() {
             <span className="nav-label">Workout</span>
           </Link>
           <Link to="/rehab" className={`nav-item ${location.pathname === '/rehab' ? 'active' : ''}`}>
-            <span className="nav-icon">🧰</span>
-            <span className="nav-label">Rehab</span>
+            <span className="nav-icon">🤕</span>
+            <span className="nav-label">Training Room</span>
           </Link>
           <Link to="/profile" className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`}>
             <span className="nav-icon">👤</span>

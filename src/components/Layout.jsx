@@ -25,9 +25,10 @@ function Layout({ children }) {
             <>
               <div className="header-left">
                 <span className="logo" style={{ color: '#d4af37', cursor: 'default' }}>Nextt</span>
+                <Link to="/progress" className="nav-link" style={{ fontSize: '1.2em', marginLeft: '5px' }}>📈</Link>
               </div>
               <div className="header-right">
-                <Link to="/progress" className="nav-link" style={{ fontSize: '1.5em' }}>📈</Link>
+                {/* Empty right side */}
               </div>
             </>
           ) : (

@@ -19,8 +19,8 @@ function BottomNav({ location: propLocation }) {
         to="/rehab" 
         className={`nav-item ${location.pathname === '/rehab' ? 'active' : ''}`}
       >
-        <span className="nav-icon">💉</span>
-        <span className="nav-text">Rehab</span>
+        <span className="nav-icon">🤕</span>
+        <span className="nav-text">Training Room</span>
       </Link>
       <Link 
         to="/profile" 
