@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from './Layout';
-import { signUp } from '../supabase';
 import './Login.css';
 
 function Register() {
@@ -123,30 +122,40 @@ function Register() {
     setLoading(true);
 
     try {
-      const { data, error: signUpError } = await signUp(
-        formData.email.trim(),
-        formData.password,
-        formData.fullName.trim()
-      );
-
-      if (signUpError) {
-        // Handle specific signup errors
-        if (signUpError.message.includes('email')) {
-          setError('This email is already registered. Please use a different email or sign in.');
-        } else {
-          throw signUpError;
-        }
+      // Check if user already exists
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const userExists = users.some(user => user.email === formData.email.trim());
+      
+      if (userExists) {
+        setError('An account with this email already exists');
+        setLoading(false);
         return;
       }
 
-      // Store the user's name and set isNewUser flag
-      localStorage.setItem('userName', formData.fullName.trim());
-      localStorage.setItem('isNewUser', 'true');
+      // Create new user
+      const newUser = {
+        id: Date.now().toString(),
+        email: formData.email.trim(),
+        password: formData.password,
+        fullName: formData.fullName.trim(),
+        createdAt: new Date().toISOString()
+      };
+
+      // Save to localStorage
+      users.push(newUser);
+      localStorage.setItem('users', JSON.stringify(users));
+
+      // Set current user
+      localStorage.setItem('currentUser', JSON.stringify({
+        id: newUser.id,
+        email: newUser.email,
+        fullName: newUser.fullName
+      }));
 
       // Redirect to profile setup
       navigate('/profile-setup', { replace: true });
     } catch (err) {
-      setError(err.message || 'An error occurred during registration. Please try again.');
+      setError('An error occurred during registration. Please try again.');
     } finally {
       setLoading(false);
     }

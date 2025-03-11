@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from './Layout';
-import { resetPasswordForEmail } from '../supabase';
 import './Login.css';
 
 function ForgotPassword() {
@@ -23,17 +22,20 @@ function ForgotPassword() {
     setError('');
 
     try {
-      const { error: resetError } = await resetPasswordForEmail(email);
+      // Get users from localStorage
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const userExists = users.some(user => user.email === email.trim());
 
-      if (resetError) {
-        throw resetError;
+      if (!userExists) {
+        throw new Error('No account found with this email address');
       }
 
-      setSuccess('Password reset instructions have been sent to your email');
+      // Store the email for password reset
+      localStorage.setItem('resetPasswordEmail', email.trim());
+
+      setSuccess('Password reset link generated');
       setTimeout(() => {
-        navigate('/login', { 
-          state: { message: 'Password reset instructions have been sent to your email' }
-        });
+        navigate('/reset-password');
       }, 2000);
     } catch (err) {
       setError(err.message || 'Error sending reset instructions');

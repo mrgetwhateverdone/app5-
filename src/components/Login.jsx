@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Layout from './Layout';
-import { signIn } from '../supabase';
 import './Login.css';
 
 function Login() {
@@ -48,26 +47,39 @@ function Login() {
     setLoading(true);
 
     try {
-      const { data, error: signInError } = await signIn(
-        formData.email.trim(),
-        formData.password
+      console.log('Attempting login with:', { email: formData.email.trim() });
+      
+      // Get users from localStorage
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const user = users.find(u => 
+        u.email === formData.email.trim() && 
+        u.password === formData.password
       );
 
-      if (signInError) {
-        throw signInError;
-      }
-
-      // Only proceed if we have valid user data
-      const userName = localStorage.getItem('userName');
-      const userProfile = localStorage.getItem('userProfile');
-
-      if (!userName) {
-        setError('User account not found. Please register first.');
+      if (!user) {
+        setError('Invalid email or password. Please check your credentials and try again.');
         setLoading(false);
         return;
       }
 
+      console.log('Login successful');
+      
+      // Set current user in localStorage
+      localStorage.setItem('currentUser', JSON.stringify({
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName
+      }));
+
+      // Set userName for backward compatibility
+      localStorage.setItem('userName', user.fullName);
+      
+      // Check for user profile
+      const userProfile = localStorage.getItem('userProfile');
+      console.log('User profile from localStorage:', userProfile ? 'Found' : 'Not found');
+
       if (!userProfile) {
+        console.log('Redirecting to profile setup');
         // If no profile exists, redirect to profile setup
         navigate('/profile-setup', { replace: true });
         return;
@@ -75,9 +87,11 @@ function Login() {
 
       // Get the intended destination from location state, or default to dashboard
       const from = location.state?.from?.pathname || '/dashboard';
+      console.log('Redirecting to:', from);
       navigate(from, { replace: true });
     } catch (err) {
-      setError('Invalid email or password. Please check your credentials and try again.');
+      console.error('Unexpected error during login:', err);
+      setError('An unexpected error occurred. Please try again later.');
     } finally {
       setLoading(false);
     }

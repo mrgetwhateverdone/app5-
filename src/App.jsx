@@ -70,7 +70,7 @@ function Home() {
 
           <div className="why-section">
             <p className="why-description">
-              This platform is designed for current college athletes and those who are training to become one. It creates custom 6-week workout plans based on your sport, position, body type, and training goals while tracking your progress as you make improvements. Whether you're focused on increasing your strength, or looking to improve your athletic ability, I've got you covered with sport-specific exercises and workouts that simulate collegiate level athletic training, with injury prevention rehab included, that will elevate your game and take you to the <Link to="/register" className="title-nextt floating">Nextt</Link> level.
+              This platform is designed for current college athletes and those who are training to become one. It creates custom 6-week workout plans based on your sport, position, body type, and training goals while tracking your progress as you make improvements. Whether you're focused on increasing your strength, or looking to improve your athletic ability, I've got you covered with sport-specific exercises and workouts that simulate collegiate level athletic training, with injury prevention rehab included, that will elevate your game and take you to the <Link to="/register" className="title-nextt">Nextt</Link> level.
             </p>
             <Link to="/register" className="cta-button">Start Your Journey</Link>
           </div>

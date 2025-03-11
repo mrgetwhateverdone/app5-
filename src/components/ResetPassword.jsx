@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from './Layout';
-import { updateUserPassword } from '../supabase';
 import './Login.css';
 
 function ResetPassword() {
@@ -11,6 +10,13 @@ function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    const resetEmail = localStorage.getItem('resetPasswordEmail');
+    if (!resetEmail) {
+      navigate('/forgot-password');
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,11 +40,22 @@ function ResetPassword() {
     setError('');
 
     try {
-      const { error: updateError } = await updateUserPassword(password);
-
-      if (updateError) {
-        throw updateError;
+      const resetEmail = localStorage.getItem('resetPasswordEmail');
+      if (!resetEmail) {
+        throw new Error('Reset session expired');
       }
+
+      // Update password in localStorage
+      const users = JSON.parse(localStorage.getItem('users') || '[]');
+      const userIndex = users.findIndex(user => user.email === resetEmail);
+      
+      if (userIndex === -1) {
+        throw new Error('User not found');
+      }
+
+      users[userIndex].password = password;
+      localStorage.setItem('users', JSON.stringify(users));
+      localStorage.removeItem('resetPasswordEmail');
 
       navigate('/login', { 
         state: { message: 'Password has been reset successfully' }
