@@ -482,10 +482,11 @@ function Rehab() {
   };
 
   return (
-    <Layout location={location}>
+    <Layout>
       <div className="rehab-container">
         <div className="rehab-header">
-          <h1>Rehabilitation Center</h1>
+          <h1>Recovery & Prevention</h1>
+          <p>Sport-specific exercises for injury prevention and recovery</p>
         </div>
         
         <div className="search-bar">

@@ -1,85 +1,452 @@
 .active-workout {
-  background: #ffffff;
-  min-height: 100vh;
   padding: 1rem;
-  color: #333333;
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  min-height: 100vh;
 }
 
 .workout-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 0;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #eee;
 }
 
 .workout-header h2 {
   font-size: 1.5rem;
-  font-weight: 600;
-  color: #333333;
+  color: #333;
+  margin: 0;
 }
 
 .close-button {
   background: none;
   border: none;
-  color: #666666;
   font-size: 1.5rem;
   cursor: pointer;
-  padding: 0.5rem;
-  transition: color 0.3s ease;
-}
-
-.close-button:hover {
-  color: #d4af37;
-}
-
-.add-exercise-form {
-  background: #ffffff;
-  padding: 1.5rem;
-  border-radius: 12px;
-  margin: 1rem 0;
-  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.15);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-}
-
-.add-exercise-form input {
-  width: 100%;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  background: #ffffff;
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 8px;
-  color: #333333;
+  color: #666;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
   transition: all 0.3s ease;
 }
 
-.add-exercise-form input:focus {
-  border-color: #d4af37;
-  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.1);
-  outline: none;
+.close-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
-.exercise-type-buttons {
+/* Exercise Progress Bar */
+.exercise-progress {
+  margin-bottom: 1.5rem;
+}
+
+.progress-bar {
+  height: 8px;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: #d4af37;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 0.875rem;
+  color: #666;
+  text-align: center;
+}
+
+/* Current Exercise Section */
+.current-exercise {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.exercise-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.exercise-header h3 {
+  font-size: 1.25rem;
+  color: #333;
+  margin: 0;
+}
+
+.set-indicator {
+  font-size: 0.875rem;
+  color: #666;
+  padding: 0.25rem 0.75rem;
+  background-color: #f0f0f0;
+  border-radius: 20px;
+}
+
+/* Weight Input Section */
+.weight-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.previous-weight-toggle {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  color: #495057;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.previous-weight-info {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.previous-weight-info p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #495057;
+}
+
+.weight-date {
+  color: #6c757d;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.weight-input-row {
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
 }
 
+.input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.input-group label {
+  font-size: 0.875rem;
+  color: #666;
+}
+
+.input-group input {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.complete-set-button {
+  background-color: #d4af37;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.complete-set-button:hover {
+  background-color: #c19f35;
+}
+
+.skip-set-button {
+  background-color: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  margin-top: 1rem;
+  width: 100%;
+  transition: background-color 0.3s ease;
+}
+
+.skip-set-button:hover {
+  background-color: #f0f0f0;
+}
+
+/* Timed Exercise Section */
+.timed-exercise {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.time-display {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.start-button {
+  background-color: #d4af37;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 2rem;
+  font-size: 1.125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.start-button:hover {
+  background-color: #c19f35;
+}
+
+/* Rest Timer */
+.rest-timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.timer-circle {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin-bottom: 1rem;
+}
+
+.timer-circle svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.timer-circle circle {
+  transition: stroke-dashoffset 1s linear;
+}
+
+.timer-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 3rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.timer-label {
+  font-size: 1.25rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.skip-button {
+  background-color: #f0f0f0;
+  color: #666;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.skip-button:hover {
+  background-color: #e0e0e0;
+}
+
+/* Countdown */
+.countdown {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+}
+
+.countdown-number {
+  font-size: 8rem;
+  font-weight: bold;
+  color: #d4af37;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Exercise List Toggle */
+.exercise-list-toggle {
+  background-color: #f0f0f0;
+  color: #666;
+  text-align: center;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: background-color 0.3s ease;
+}
+
+.exercise-list-toggle:hover {
+  background-color: #e0e0e0;
+}
+
+/* Exercise Options */
+.exercise-options {
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 5rem;
+}
+
+.exercise-list-section h4 {
+  font-size: 1rem;
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.exercise-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.5rem 0;
+}
+
+.exercise-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.exercise-item.current {
+  background-color: rgba(212, 175, 55, 0.1);
+  border-left: 3px solid #d4af37;
+}
+
+.exercise-item.completed {
+  opacity: 0.6;
+}
+
+.exercise-name {
+  font-size: 0.875rem;
+  color: #333;
+}
+
+.exercise-sets {
+  display: flex;
+  gap: 4px;
+}
+
+.set-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ddd;
+}
+
+.set-indicator.completed {
+  background-color: #d4af37;
+}
+
+.set-indicator.current {
+  background-color: #d4af37;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.3);
+}
+
+.add-exercise-button {
+  width: 100%;
+  background-color: #f0f0f0;
+  color: #666;
+  border: 1px dashed #ddd;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.add-exercise-button:hover {
+  background-color: #e0e0e0;
+}
+
+/* Add Exercise Form */
+.add-exercise-form {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.add-exercise-form input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.exercise-type-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
 .type-button {
   flex: 1;
-  padding: 0.75rem;
-  border: 1px solid #d4af37;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #d4af37;
+  padding: 0.5rem;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-weight: 500;
 }
 
 .type-button.active {
-  background: #d4af37;
-  color: #ffffff;
+  background-color: #d4af37;
+  color: white;
+  border-color: #d4af37;
 }
 
 .button-group {
@@ -91,212 +458,167 @@
 .button-group button {
   flex: 1;
   padding: 0.75rem;
-  border-radius: 8px;
-  border: none;
+  font-size: 0.875rem;
+  border-radius: 6px;
   cursor: pointer;
-  font-weight: 600;
   transition: all 0.3s ease;
 }
 
 .button-group button:first-child {
-  background: #f5f5f5;
-  color: #666666;
+  background-color: #f0f0f0;
+  color: #666;
+  border: 1px solid #ddd;
 }
 
 .button-group button:last-child {
-  background: #d4af37;
-  color: #ffffff;
+  background-color: #d4af37;
+  color: white;
+  border: none;
 }
 
-.countdown {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+.button-group button:first-child:hover {
+  background-color: #e0e0e0;
 }
 
-.countdown-number {
-  font-size: 6rem;
-  font-weight: bold;
-  color: #d4af37;
-  animation: pulse 1s infinite;
+.button-group button:last-child:hover {
+  background-color: #c19f35;
 }
 
-.rest-timer {
+/* Workout Complete */
+.workout-complete {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  text-align: center;
   padding: 2rem;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.15);
 }
 
-.timer-circle {
-  position: relative;
-  width: 200px;
-  height: 200px;
-}
-
-.timer-circle svg {
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-
-.timer-progress {
-  fill: none;
-  stroke: #d4af37;
-  stroke-width: 8;
-  stroke-linecap: round;
-  stroke-dasharray: 440;
-  transition: stroke-dashoffset 1s linear;
-}
-
-.timer-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #333333;
-}
-
-.skip-rest {
-  margin-top: 1.5rem;
-  padding: 0.75rem 2rem;
-  background: #d4af37;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.skip-rest:hover {
-  background: #c19f35;
-}
-
-.current-exercise {
-  padding: 1.5rem;
-  background: #ffffff;
-  border-radius: 12px;
-  margin: 1rem 0;
-  box-shadow: 0 2px 8px rgba(212, 175, 55, 0.15);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-}
-
-.current-exercise h3 {
-  font-size: 1.25rem;
+.complete-icon {
+  font-size: 4rem;
   margin-bottom: 1rem;
-  color: #333333;
 }
 
-.set-info {
-  margin-bottom: 1.5rem;
-}
-
-.previous-weight {
-  color: #666666;
+.workout-complete h3 {
+  font-size: 1.5rem;
+  color: #333;
   margin-bottom: 0.5rem;
-  font-size: 0.9rem;
 }
 
-.weight-input {
+.workout-complete p {
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.workout-summary {
   display: flex;
-  gap: 0.5rem;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 400px;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.summary-stat {
+  display: flex;
+  flex-direction: column;
   align-items: center;
 }
 
-.weight-input input {
-  flex: 1;
-  padding: 0.75rem;
-  background: #ffffff;
-  border: 1px solid rgba(212, 175, 55, 0.3);
-  border-radius: 8px;
-  color: #333333;
+.stat-label {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 0.5rem;
 }
 
-.weight-input input:focus {
-  border-color: #d4af37;
-  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.1);
-  outline: none;
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333;
 }
 
-.weight-input button {
-  padding: 0.75rem;
-  background: #d4af37;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.weight-input button:hover {
-  background: #c19f35;
-}
-
-.exercise-options {
-  display: flex;
-  gap: 1rem;
-}
-
-.exercise-options button {
-  flex: 1;
-  padding: 0.75rem;
-  background: #f5f5f5;
-  border: none;
-  border-radius: 8px;
-  color: #666666;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.exercise-options button:hover {
-  background: #ebebeb;
-  color: #333333;
-}
-
-.add-exercise-button {
-  width: 100%;
-  padding: 1rem;
-  background: #d4af37;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
+.saving-indicator {
+  color: #666;
   margin-bottom: 1rem;
-  transition: all 0.3s ease;
 }
 
-.add-exercise-button:hover {
-  background: #c19f35;
+.primary-button {
+  background-color: #d4af37;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-    opacity: 1;
+.primary-button:hover {
+  background-color: #c19f35;
+}
+
+/* Error State */
+.error-state {
+  text-align: center;
+  padding: 2rem;
+}
+
+.error-message {
+  background-color: #ffe8e8;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  color: #d32f2f;
+}
+
+/* Loading State */
+.workout-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+  color: #666;
+}
+
+/* Responsive Styles */
+@media (max-width: 600px) {
+  .active-workout {
+    padding: 0.75rem;
   }
-  50% {
-    transform: scale(1.2);
-    opacity: 0.8;
+  
+  .workout-header h2 {
+    font-size: 1.25rem;
   }
-  100% {
-    transform: scale(1);
-    opacity: 1;
+  
+  .timer-circle {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .timer-text {
+    font-size: 2.5rem;
+  }
+  
+  .weight-input-row {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .workout-summary {
+    padding: 1rem;
+  }
+  
+  .stat-value {
+    font-size: 1.25rem;
+  }
+  
+  .complete-icon {
+    font-size: 3rem;
+  }
+  
+  .countdown-number {
+    font-size: 6rem;
   }
 } 

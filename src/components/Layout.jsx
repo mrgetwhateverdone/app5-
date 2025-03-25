@@ -3,23 +3,35 @@ import { Link, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faInstagram, faXTwitter } from '@fortawesome/free-brands-svg-icons';
 import BottomNav from './BottomNav';
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = 'https://rvipmtgsrftkjftslqfc.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ2aXBtdGdzcmZ0a2pmdHNscWZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE3MDgyMTcsImV4cCI6MjA1NzI4NDIxN30.NjrDhn1llA6zyH-gQ9RNRO8Q8WRvRzqHMDTfTd4-0oE';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { auth } from '../services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 function Layout({ children }) {
   const location = useLocation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const publicRoutes = ['/', '/login', '/register', '/privacy', '/terms', '/contact', '/feedback'];
+  const publicRoutes = ['/', '/login', '/register', '/privacy', '/terms', '/contact', '/feedback', '/features'];
   const isPublicRoute = publicRoutes.includes(location.pathname);
 
   useEffect(() => {
-    const userProfile = localStorage.getItem('userProfile');
-    const userName = localStorage.getItem('userName');
-    setIsAuthenticated(!!userProfile && !!userName);
+    // Use Firebase auth state instead of localStorage
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+      
+      // Update localStorage for backward compatibility with other components
+      if (user) {
+        if (!localStorage.getItem('userProfile')) {
+          // If no profile in localStorage, we'll need to handle this in the component
+          // that needs it by fetching from Firebase
+        }
+      } else {
+        // User is signed out
+        localStorage.removeItem('userProfile');
+        localStorage.removeItem('userName');
+      }
+    });
+    
+    // Cleanup subscription
+    return () => unsubscribe();
   }, []);
 
   return (
@@ -51,8 +63,8 @@ function Layout({ children }) {
       {/* Main content */}
       {children}
 
-      {/* Footer - only on public routes or when not authenticated */}
-      {(isPublicRoute || !isAuthenticated) && (
+      {/* Footer - only on public routes */}
+      {(isPublicRoute) && (
         <>
           {location.pathname !== '/login' && location.pathname !== '/register' && (
             <div className="feedback-button-container">

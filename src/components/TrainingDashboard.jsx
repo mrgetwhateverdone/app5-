@@ -5,6 +5,8 @@ import './TrainingDashboard.css';
 import ActiveWorkout from './ActiveWorkout';
 import WorkoutCreator from './WorkoutCreator';
 import { exerciseDatabase } from '../exerciseDatabase';
+import { auth, getUserProfile, saveWorkoutPlan, getWorkoutPlan } from '../services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 function generateWorkoutPlan(userProfile) {
   if (!userProfile) return null;
@@ -160,7 +162,9 @@ function WorkoutPlan({ plan, onStartWorkout }) {
   if (!plan) return <div>Loading workout plan...</div>;
 
   const week = plan.weeks[currentWeek];
-  const currentWorkout = week[selectedDay];
+  const day = week?.days[selectedDay];
+
+  if (!day) return <div>Error loading workout data</div>;
 
   return (
     <div className="workout-plan">
@@ -183,13 +187,13 @@ function WorkoutPlan({ plan, onStartWorkout }) {
           </button>
         </div>
         <div className="week-days">
-          {[0, 1, 2].map((day) => (
+          {week.days.map((day, index) => (
             <button
-              key={day}
-              className={`day-button ${selectedDay === day ? 'active' : ''}`}
-              onClick={() => setSelectedDay(day)}
+              key={index}
+              className={`day-button ${selectedDay === index ? 'active' : ''}`}
+              onClick={() => setSelectedDay(index)}
             >
-              Day {day + 1}
+              Day {day.dayNumber}
             </button>
           ))}
         </div>
@@ -197,40 +201,44 @@ function WorkoutPlan({ plan, onStartWorkout }) {
 
       <div className="workout-details">
         <div className="workout-header">
-          <h3>{currentWorkout.intensity} Workout</h3>
+          <h3>{day.intensity} Workout</h3>
           <div className="workout-intensity">Phase {Math.floor(currentWeek/2) + 1}</div>
         </div>
         
         <div className="workout-stats">
           <div className="stat-item">
             <span className="stat-label">Sets</span>
-            <span className="stat-value">{currentWorkout.sets}</span>
+            <span className="stat-value">{day.exercises[0]?.sets || "-"}</span>
           </div>
           <div className="stat-item">
             <span className="stat-label">Reps</span>
-            <span className="stat-value">{currentWorkout.reps}</span>
+            <span className="stat-value">{day.exercises[0]?.reps || "-"}</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-label">Rest</span>
+            <span className="stat-value">{day.exercises[0]?.rest || "-"}</span>
           </div>
         </div>
         
         <div className="exercise-section">
           <h4>Today's Exercises</h4>
           <ul className="exercise-list">
-            {currentWorkout.exercises.map((exercise, index) => (
+            {day.exercises.map((exercise, index) => (
               <li key={index} className="exercise-item">
                 <span className="exercise-number">{index + 1}</span>
-                {exercise}
+                <span className="exercise-name">{exercise.name}</span>
               </li>
             ))}
           </ul>
         </div>
 
         <div className="workout-notes">
-          <p>{currentWorkout.notes}</p>
+          <p>Focus on proper form and controlled movements. Adjust weights as needed.</p>
         </div>
 
         <button 
           className="start-workout-button"
-          onClick={() => onStartWorkout(currentWorkout)}
+          onClick={() => onStartWorkout(day)}
         >
           Start Workout
         </button>
@@ -248,56 +256,134 @@ function TrainingDashboard() {
   const [activeWorkout, setActiveWorkout] = useState(null);
   const [showWorkoutCreator, setShowWorkoutCreator] = useState(false);
   const [hasWorkoutPlan, setHasWorkoutPlan] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    const profile = localStorage.getItem('userProfile');
-    const isNewUser = localStorage.getItem('isNewUser');
-    const workoutCreated = localStorage.getItem('workoutCreated');
-    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
-    
-    if (profile) {
-      const parsedProfile = JSON.parse(profile);
-      setUserProfile(parsedProfile);
+    // Listen for auth state changes
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUserId(user.uid);
+        await loadUserData(user.uid);
+      } else {
+        // User is not logged in, redirect to login
+        navigate('/login');
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
+
+  const loadUserData = async (uid) => {
+    try {
+      // Get user profile from Firebase
+      const { profile, error: profileError } = await getUserProfile(uid);
       
-      // Check if user has completed onboarding
-      if (!onboardingCompleted) {
-        navigate('/onboarding');
+      if (profileError) {
+        console.error("Error fetching user profile:", profileError);
+        // Try fallback to localStorage for profile
+        const localProfile = localStorage.getItem('userProfile');
+        if (localProfile) {
+          const parsedProfile = JSON.parse(localProfile);
+          setUserProfile(parsedProfile);
+          
+          // If there's a focus, try to load or generate a workout plan
+          if (parsedProfile.focus) {
+            await loadOrCreateWorkoutPlan(uid, parsedProfile);
+          }
+        } else {
+          // No profile, redirect to profile setup
+          navigate('/profile-setup');
+        }
         return;
       }
       
-      // Check if user has created a workout plan
-      if (parsedProfile.focus && workoutCreated) {
-        const plan = generateWorkoutPlan(parsedProfile);
+      if (profile) {
+        setUserProfile(profile);
+        
+        // Store profile in localStorage for backward compatibility
+        localStorage.setItem('userProfile', JSON.stringify(profile));
+        localStorage.setItem('userName', profile.name || '');
+        
+        // Try to load workout plan if profile has a focus
+        if (profile.focus) {
+          await loadOrCreateWorkoutPlan(uid, profile);
+        }
+      } else {
+        // No profile, redirect to profile setup
+        navigate('/profile-setup');
+      }
+    } catch (error) {
+      console.error("Error in loadUserData:", error);
+    }
+  };
+  
+  const loadOrCreateWorkoutPlan = async (uid, profile) => {
+    try {
+      // Try to fetch existing workout plan from Firebase
+      const { plan, error } = await getWorkoutPlan(uid);
+      
+      if (error) {
+        console.error("Error fetching workout plan:", error);
+        
+        // Generate a new plan
+        const newPlan = generateWorkoutPlan(profile);
+        setWorkoutPlan(newPlan);
+        setHasWorkoutPlan(!!newPlan);
+        
+        // Save the new plan to Firebase
+        if (newPlan) {
+          await saveWorkoutPlan(uid, newPlan);
+        }
+        
+        return;
+      }
+      
+      if (plan) {
         setWorkoutPlan(plan);
         setHasWorkoutPlan(true);
+      } else {
+        // No plan found, generate a new one
+        const newPlan = generateWorkoutPlan(profile);
+        setWorkoutPlan(newPlan);
+        setHasWorkoutPlan(!!newPlan);
+        
+        // Save the new plan to Firebase
+        if (newPlan) {
+          await saveWorkoutPlan(uid, newPlan);
+        }
       }
-    } else {
-      // No profile found, redirect to login
-      navigate('/login');
-      return;
+    } catch (error) {
+      console.error("Error in loadOrCreateWorkoutPlan:", error);
     }
-
-    if (isNewUser) {
-      localStorage.removeItem('isNewUser');
-    }
-  }, [navigate]);
-
-  const handleStartWorkout = (workout) => {
-    setActiveWorkout(workout);
   };
 
-  const handleCompleteWorkout = (workoutData) => {
-    // Save workout data
-    const completedWorkouts = JSON.parse(localStorage.getItem('completedWorkouts') || '{}');
-    const workoutNumber = activeWorkout.day;
-    
-    completedWorkouts[workoutNumber] = {
-      ...workoutData,
-      date: new Date().toISOString()
+  const handleStartWorkout = (workout) => {
+    // Ensure the workout has the correct data structure that ActiveWorkout expects
+    const formattedWorkout = {
+      day: workout.dayNumber || "Today",
+      exercises: workout.exercises.map(exercise => ({
+        name: exercise.name,
+        sets: exercise.sets || 3,
+        reps: exercise.reps,
+        type: 'weighted'
+      }))
     };
-    
-    localStorage.setItem('completedWorkouts', JSON.stringify(completedWorkouts));
-    setActiveWorkout(null);
+    setActiveWorkout(formattedWorkout);
+  };
+
+  const handleCompleteWorkout = async (workoutData) => {
+    try {
+      // Workout data is already saved to Firebase in the ActiveWorkout component
+      
+      // Update UI
+      setActiveWorkout(null);
+      
+      // Show success message or notification if needed
+    } catch (error) {
+      console.error("Error completing workout:", error);
+    }
   };
 
   const handleCloseWorkout = () => {
@@ -312,16 +398,16 @@ function TrainingDashboard() {
     setShowWorkoutCreator(false);
   };
   
-  const handleCreateWorkout = (updatedProfile) => {
+  const handleCreateWorkout = async (updatedProfile) => {
     try {
-      console.log('Creating workout with profile:', updatedProfile);
+      setLoading(true);
       
       // Generate a new workout plan with the updated profile
       const newPlan = generateWorkoutPlan(updatedProfile);
-      console.log('Generated workout plan:', newPlan);
       
       if (!newPlan) {
         console.error('Failed to generate workout plan');
+        setLoading(false);
         return;
       }
       
@@ -331,22 +417,32 @@ function TrainingDashboard() {
       setHasWorkoutPlan(true);
       setShowWorkoutCreator(false);
       
-      // Save the updated profile to localStorage
-      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-      
-      // Mark that a workout has been created
-      localStorage.setItem('workoutCreated', 'true');
-      
-      // Initialize workout progress tracking if it doesn't exist
-      if (!localStorage.getItem('completedWorkouts')) {
-        localStorage.setItem('completedWorkouts', JSON.stringify({}));
+      // Save the updated profile and workout plan to Firebase
+      if (userId) {
+        await saveWorkoutPlan(userId, newPlan);
       }
       
-      console.log('Workout plan created and saved successfully');
+      // Update localStorage for backward compatibility
+      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+      localStorage.setItem('workoutCreated', 'true');
+      
+      setLoading(false);
     } catch (error) {
       console.error('Error creating workout plan:', error);
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading your workout data...</p>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!userProfile) {
     return (
