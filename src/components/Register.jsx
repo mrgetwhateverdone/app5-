@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from './Layout';
 import './Login.css';
+import { registerUser, createUserProfile } from '../services/firebase';
 
 function Register() {
   const navigate = useNavigate();
@@ -122,48 +123,69 @@ function Register() {
     setLoading(true);
 
     try {
-      // Check if user already exists
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const userExists = users.some(user => user.email === formData.email.trim());
+      console.log('Attempting to register with Firebase:', formData.email.trim());
       
-      if (userExists) {
-        setError('An account with this email already exists');
+      // Create user in Firebase Authentication
+      const { user, error: registerError } = await registerUser(
+        formData.email.trim(), 
+        formData.password
+      );
+      
+      if (registerError) {
+        console.error('Firebase registration error:', registerError);
+        
+        // Handle specific Firebase auth errors
+        if (registerError.includes("auth/email-already-in-use")) {
+          setError('An account with this email already exists');
+        } else if (registerError.includes("auth/invalid-email")) {
+          setError('The email address is not valid');
+        } else if (registerError.includes("auth/weak-password")) {
+          setError('Password is too weak');
+        } else if (registerError.includes("auth/operation-not-allowed")) {
+          setError('Email/password accounts are not enabled. Please contact support.');
+        } else if (registerError.includes("auth/configuration-not-found")) {
+          setError('Authentication service is not properly configured. Please contact support.');
+        } else {
+          setError(registerError);
+        }
         setLoading(false);
         return;
       }
-
-      // Create new user
-      const newUser = {
-        id: Date.now().toString(),
+      
+      if (!user) {
+        setError('An error occurred during registration. Please try again.');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Registration successful, creating user profile');
+      
+      // Create user profile in Firestore
+      const userProfile = {
+        name: formData.fullName.trim(),
         email: formData.email.trim(),
-        password: formData.password,
-        fullName: formData.fullName.trim(),
         createdAt: new Date().toISOString()
       };
-
-      // Save to localStorage
-      users.push(newUser);
-      localStorage.setItem('users', JSON.stringify(users));
-
-      // Set current user
-      localStorage.setItem('currentUser', JSON.stringify({
-        id: newUser.id,
-        email: newUser.email,
-        fullName: newUser.fullName
-      }));
-
-      // Set required auth data
-      localStorage.setItem('userName', newUser.fullName);
+      
+      const { error: profileError } = await createUserProfile(user.uid, userProfile);
+      
+      if (profileError) {
+        console.error("Error creating user profile:", profileError);
+        // Continue even if profile creation fails - we can recover later
+      }
+      
+      // For backward compatibility with other components
+      localStorage.setItem('userName', formData.fullName.trim());
       localStorage.setItem('userProfile', JSON.stringify({
-        id: newUser.id,
-        email: newUser.email,
-        fullName: newUser.fullName,
-        createdAt: newUser.createdAt
+        id: user.uid,
+        email: formData.email.trim(),
+        name: formData.fullName.trim()
       }));
 
       // Redirect to onboarding
       navigate('/onboarding', { replace: true });
     } catch (err) {
+      console.error("Registration error:", err);
       setError('An error occurred during registration. Please try again.');
     } finally {
       setLoading(false);

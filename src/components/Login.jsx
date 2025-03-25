@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Layout from './Layout';
 import './Login.css';
+import { loginUser, getUserProfile } from '../services/firebase';
 
 function Login() {
   const navigate = useNavigate();
@@ -59,32 +60,58 @@ function Login() {
     try {
       console.log('Attempting login with:', { email: formData.email.trim() });
       
-      // Get users from localStorage
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const user = users.find(u => 
-        u.email === formData.email.trim() && 
-        u.password === formData.password
-      );
-
-      if (!user) {
-        setError('Invalid email or password. Please check your credentials and try again.');
+      // Login with Firebase
+      const { user, error: loginError } = await loginUser(formData.email.trim(), formData.password);
+      
+      if (loginError) {
+        console.error('Firebase login error:', loginError);
+        
+        // Handle specific Firebase auth errors
+        if (loginError.includes("auth/invalid-credential") || 
+            loginError.includes("auth/user-not-found") || 
+            loginError.includes("auth/wrong-password")) {
+          setError('Invalid email or password. Please check your credentials and try again.');
+        } else if (loginError.includes("auth/invalid-email")) {
+          setError('The email address is not valid.');
+        } else if (loginError.includes("auth/user-disabled")) {
+          setError('This account has been disabled. Please contact support.');
+        } else if (loginError.includes("auth/too-many-requests")) {
+          setError('Too many unsuccessful login attempts. Please try again later or reset your password.');
+        } else if (loginError.includes("auth/operation-not-allowed")) {
+          setError('Email/password accounts are not enabled. Please contact support.');
+        } else if (loginError.includes("auth/configuration-not-found")) {
+          setError('Authentication service is not properly configured. Please contact support.');
+        } else {
+          setError(loginError);
+        }
         setLoading(false);
         return;
       }
-
-      console.log('Login successful');
       
-      // Set current user and profile in localStorage
-      const userProfile = {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        createdAt: user.createdAt
+      if (!user) {
+        setError('An error occurred during login. Please try again.');
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Login successful, user ID:', user.uid);
+      
+      // Try to get the user profile from Firestore
+      const { profile } = await getUserProfile(user.uid);
+      
+      // For backward compatibility with other components
+      const userProfile = profile || { 
+        id: user.uid, 
+        email: user.email, 
+        name: user.displayName || formData.email.split('@')[0] 
       };
-
-      localStorage.setItem('currentUser', JSON.stringify(userProfile));
-      localStorage.setItem('userName', user.fullName);
-      localStorage.setItem('userProfile', JSON.stringify(userProfile));
+      
+      localStorage.setItem('userName', userProfile.name || userProfile.fullName || user.email.split('@')[0]);
+      localStorage.setItem('userProfile', JSON.stringify({
+        ...userProfile,
+        id: user.uid,
+        email: user.email
+      }));
       
       // Get the intended destination from location state, or default to dashboard
       const from = location.state?.from?.pathname || '/dashboard';

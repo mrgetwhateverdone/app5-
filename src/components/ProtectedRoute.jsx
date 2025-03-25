@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { auth } from '../services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 function ProtectedRoute({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -7,16 +9,21 @@ function ProtectedRoute({ children }) {
   const location = useLocation();
 
   useEffect(() => {
-    // Check if user is authenticated by looking for profile data
-    const userProfile = localStorage.getItem('userProfile');
-    const userName = localStorage.getItem('userName');
+    // Use Firebase auth state instead of localStorage
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+      setIsLoading(false);
+      
+      // If user is authenticated but we don't have profile data in localStorage,
+      // we'll let other components handle fetching it as needed
+    });
     
-    setIsAuthenticated(!!userProfile && !!userName);
-    setIsLoading(false);
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, []);
 
   if (isLoading) {
-    return null; // or a loading spinner
+    return <div className="auth-loading">Loading...</div>; // Simple loading indicator
   }
 
   if (!isAuthenticated) {

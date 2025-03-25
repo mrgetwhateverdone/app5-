@@ -361,3 +361,30 @@
   color: #333;
   font-size: 0.9rem;
 }
+
+.auth-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.auth-loading::after {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid #d4af37;
+  border-radius: 50%;
+  border-top-color: transparent;
+  margin-left: 0.5rem;
+  animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

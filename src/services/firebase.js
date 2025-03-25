@@ -10,7 +10,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyCgqtq-A39ERYhgJP3pnS8BSpHp-e2oNhI",
   authDomain: "nextt10gen.firebaseapp.com",
   projectId: "nextt10gen",
-  storageBucket: "nextt10gen.firebasestorage.app",
+  storageBucket: "nextt10gen.appspot.com",
   messagingSenderId: "723919493861",
   appId: "1:723919493861:web:efd8f163a5cd7f1543d20c",
   measurementId: "G-4H91J4RG71"
