@@ -5,7 +5,14 @@ import './TrainingDashboard.css';
 import ActiveWorkout from './ActiveWorkout';
 import WorkoutCreator from './WorkoutCreator';
 import { exerciseDatabase } from '../exerciseDatabase';
-import { auth, getUserProfile, saveWorkoutPlan, getWorkoutPlan } from '../services/firebase';
+import { 
+  auth, 
+  getUserProfile, 
+  getWorkoutPlans,
+  getCompletedWorkouts,
+  saveWorkoutPlan,
+  getWorkoutPlan
+} from '../services/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
 function generateWorkoutPlan(userProfile) {
@@ -250,30 +257,149 @@ function WorkoutPlan({ plan, onStartWorkout }) {
 function TrainingDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [workoutPlan, setWorkoutPlan] = useState(null);
+  const [workoutPlans, setWorkoutPlans] = useState([]);
+  const [completedWorkouts, setCompletedWorkouts] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showCreatePlanModal, setShowCreatePlanModal] = useState(false);
+  const [newPlanName, setNewPlanName] = useState('');
+  const [workoutPlan, setWorkoutPlan] = useState(null);
   const [showWorkoutPlan, setShowWorkoutPlan] = useState(false);
   const [activeWorkout, setActiveWorkout] = useState(null);
   const [showWorkoutCreator, setShowWorkoutCreator] = useState(false);
   const [hasWorkoutPlan, setHasWorkoutPlan] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    // Listen for auth state changes
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUserId(user.uid);
-        await loadUserData(user.uid);
-      } else {
-        // User is not logged in, redirect to login
-        navigate('/login');
+    const loadUserDataAndWorkouts = async () => {
+      try {
+        setLoading(true);
+        
+        const user = auth.currentUser;
+        if (!user) {
+          navigate('/login');
+          return;
+        }
+        
+        // Get user profile from Firebase
+        const { profile, error: profileError } = await getUserProfile(user.uid);
+        
+        if (profileError) {
+          console.error("Error loading user profile:", profileError);
+          setError("Failed to load your profile");
+          setLoading(false);
+          return;
+        }
+        
+        if (!profile) {
+          // Redirect to profile setup if no profile found
+          navigate('/profile-setup');
+          return;
+        }
+        
+        setUserProfile(profile);
+        
+        // Get workout plans from Firebase
+        const { plans, error: plansError } = await getWorkoutPlans(user.uid);
+        
+        if (plansError) {
+          console.error("Error loading workout plans:", plansError);
+          setError("Failed to load your workout plans");
+          setLoading(false);
+          return;
+        }
+        
+        setWorkoutPlans(plans || []);
+        
+        // Get completed workouts from Firebase
+        const { workouts, error: workoutsError } = await getCompletedWorkouts(user.uid);
+        
+        if (workoutsError) {
+          console.error("Error loading completed workouts:", workoutsError);
+        }
+        
+        setCompletedWorkouts(workouts || []);
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Error loading dashboard data:", err);
+        setError("An unexpected error occurred. Please try again.");
+        setLoading(false);
       }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    };
+    
+    loadUserDataAndWorkouts();
   }, [navigate]);
+
+  const handleCreatePlan = () => {
+    if (!newPlanName.trim()) {
+      return;
+    }
+    
+    navigate('/create-workout', { state: { planName: newPlanName.trim() } });
+    setShowCreatePlanModal(false);
+    setNewPlanName('');
+  };
+
+  const formatDate = (dateString) => {
+    const options = { weekday: 'short', month: 'short', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
+
+  const getRecentWorkout = () => {
+    if (completedWorkouts.length === 0) return null;
+    
+    return completedWorkouts
+      .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+  };
+
+  const getNextScheduledWorkout = () => {
+    // In a real app, this would check scheduled workouts from a calendar
+    // For now, just use the first available workout plan
+    return workoutPlans[0] || null;
+  };
+
+  const getWorkoutStreakCount = () => {
+    if (completedWorkouts.length === 0) return 0;
+    
+    // Sort workouts by date
+    const sortedWorkouts = [...completedWorkouts]
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Get the most recent workout date
+    const lastWorkoutDate = new Date(sortedWorkouts[0].date);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    // If the last workout was more than a day ago, streak is broken
+    if (lastWorkoutDate.toDateString() !== yesterday.toDateString() && 
+        lastWorkoutDate.toDateString() !== new Date().toDateString()) {
+      return 0;
+    }
+    
+    // Count consecutive days with workouts
+    let streak = 1;
+    let currentDate = new Date(lastWorkoutDate);
+    
+    for (let i = 1; i < sortedWorkouts.length; i++) {
+      currentDate.setDate(currentDate.getDate() - 1);
+      
+      // Check if there was a workout on this day
+      const workoutOnThisDay = sortedWorkouts.some(workout => {
+        const workoutDate = new Date(workout.date);
+        return workoutDate.toDateString() === currentDate.toDateString();
+      });
+      
+      if (workoutOnThisDay) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+    
+    return streak;
+  };
 
   const loadUserData = async (uid) => {
     try {
@@ -436,162 +562,229 @@ function TrainingDashboard() {
   if (loading) {
     return (
       <Layout>
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading your workout data...</p>
+        <div className="dashboard-container">
+          <div className="loading-message">Loading your dashboard...</div>
         </div>
       </Layout>
     );
   }
 
-  if (!userProfile) {
+  if (error) {
     return (
-      <Layout location={location}>
-        <div className="training-dashboard">
-          <header className="dashboard-header">
-            <h1>Welcome to Your Dashboard</h1>
-            <p>Get started by creating your first workout plan</p>
-          </header>
-
-          <main className="dashboard-content empty-state">
-            <div className="empty-state-content">
-              <div className="empty-state-icon">💪</div>
-              <h2>No Profile Set Up</h2>
-              <p>Please complete your profile setup to get started.</p>
-              <button onClick={() => navigate('/profile-setup')} className="create-workout-button">
-                Set Up Profile
-              </button>
-            </div>
-          </main>
+      <Layout>
+        <div className="dashboard-container">
+          <div className="error-message">{error}</div>
+          <button 
+            className="retry-button" 
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </button>
         </div>
       </Layout>
     );
   }
-  
-  if (!hasWorkoutPlan) {
-    return (
-      <Layout location={location}>
-        <div className="training-dashboard">
-          <header className="dashboard-header">
-            <h1>Welcome to Your Dashboard</h1>
-            <p>Get started by creating your first workout plan</p>
-          </header>
 
-          <main className="dashboard-content empty-state">
-            <div className="empty-state-content">
-              <div className="empty-state-icon">💪</div>
-              <h2>No Workout Plans Yet</h2>
-              <p>Create your first personalized workout plan to get started on your fitness journey.</p>
-              <button onClick={handleOpenWorkoutCreator} className="create-workout-button">
-                Create Workout Plan
-              </button>
-            </div>
-          </main>
-        </div>
-        
-        {showWorkoutCreator && (
-          <WorkoutCreator 
-            userProfile={userProfile}
-            onCreateWorkout={handleCreateWorkout}
-            onCancel={handleCloseWorkoutCreator}
-          />
-        )}
-      </Layout>
-    );
-  }
-
-  if (activeWorkout) {
-    return (
-      <ActiveWorkout
-        workout={activeWorkout}
-        onComplete={handleCompleteWorkout}
-        onClose={handleCloseWorkout}
-      />
-    );
-  }
+  const recentWorkout = getRecentWorkout();
+  const nextWorkout = getNextScheduledWorkout();
+  const streakCount = getWorkoutStreakCount();
 
   return (
-    <Layout location={location}>
-      <div className="training-dashboard">
-        <header className="dashboard-header">
-          <div className="header-top">
-            <h1>Your Training Journey</h1>
-            <button onClick={handleOpenWorkoutCreator} className="create-new-workout-button" title="Create new workout plan">
-              <span className="plus-icon">+</span>
-            </button>
+    <Layout>
+      <div className="dashboard-container">
+        <div className="dashboard-header">
+          <h1>Welcome, {userProfile?.fullName || 'Athlete'}</h1>
+          <div className="streak-counter">
+            <span className="streak-icon">🔥</span>
+            <span className="streak-count">{streakCount}</span>
+            <span className="streak-label">day streak</span>
           </div>
-          <div className="profile-info">
-            <p>Welcome, {userProfile.name}!</p>
-            <p>{userProfile.sport} - {userProfile.position}</p>
-            <p>Focus: {userProfile.focus}</p>
+        </div>
+        
+        <div className="dashboard-content">
+          <div className="workout-section">
+            <div className="section-header">
+              <h2>Your Workout Plans</h2>
+              <button 
+                className="new-plan-button"
+                onClick={() => setShowCreatePlanModal(true)}
+              >
+                + New Plan
+              </button>
+            </div>
+            
+            <div className="workout-plans">
+              {workoutPlans.length > 0 ? (
+                workoutPlans.map((plan, index) => (
+                  <Link to={`/workout/${plan.id}`} key={plan.id || index} className="workout-plan-card">
+                    <h3 className="plan-name">{plan.name}</h3>
+                    <div className="plan-details">
+                      <span className="plan-exercises">{plan.exercises.length} exercises</span>
+                      {plan.lastCompleted && (
+                        <span className="last-completed">
+                          Last: {formatDate(plan.lastCompleted)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="plan-arrow">→</div>
+                  </Link>
+                ))
+              ) : (
+                <div className="empty-state">
+                  <p>You don't have any workout plans yet.</p>
+                  <button 
+                    className="create-plan-button"
+                    onClick={() => setShowCreatePlanModal(true)}
+                  >
+                    Create Your First Plan
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </header>
-
-        <main className="dashboard-content">
-          {showWorkoutPlan ? (
-            <WorkoutPlan 
-              plan={workoutPlan} 
-              onStartWorkout={handleStartWorkout}
-            />
-          ) : (
-            <div className="sections-grid">
-              {[1, 2, 3].map((phase) => (
-                <div 
-                  key={phase} 
-                  className="section-card"
-                  onClick={() => {
-                    // Ensure we have a workout plan before showing it
-                    if (workoutPlan && workoutPlan.weeks && workoutPlan.weeks.length > 0) {
-                      setShowWorkoutPlan(true);
-                    } else {
-                      // If no workout plan exists, create one
-                      handleOpenWorkoutCreator();
-                    }
-                  }}
-                >
-                  <div className="section-number">{phase}</div>
-                  <div className="section-info">
-                    <h2>{
-                      phase === 1 ? 'Foundation Phase' :
-                      phase === 2 ? 'Development Phase' :
-                      'Peak Phase'
-                    }</h2>
-                    <p>{
-                      phase === 1 ? 'Building your base strength and form' :
-                      phase === 2 ? 'Increasing intensity and complexity' :
-                      'Maximizing your performance'
-                    }</p>
-                    <span className="lessons-count">6 Workouts</span>
-                    <button className="view-workouts-button">View Workouts</button>
+          
+          <div className="summary-section">
+            <div className="summary-card recent-workout">
+              <h3>Recent Workout</h3>
+              {recentWorkout ? (
+                <div className="summary-content">
+                  <div className="summary-title">{recentWorkout.planName}</div>
+                  <div className="summary-details">
+                    <span className="summary-date">{formatDate(recentWorkout.date)}</span>
+                    <span className="summary-duration">
+                      {Math.floor(recentWorkout.duration / 60)}:{String(recentWorkout.duration % 60).padStart(2, '0')}
+                    </span>
+                  </div>
+                  <div className="summary-exercises">
+                    {recentWorkout.exercises.length} exercises completed
                   </div>
                 </div>
-              ))}
+              ) : (
+                <div className="empty-summary">
+                  <p>No recent workouts</p>
+                </div>
+              )}
             </div>
-          )}
-        </main>
-
-        <nav className="mobile-nav">
-          <Link to="/dashboard" className={`nav-item ${location.pathname === '/dashboard' ? 'active' : ''}`}>
-            <span className="nav-icon">🏋️‍♂️</span>
-            <span className="nav-label">Workout</span>
-          </Link>
-          <Link to="/rehab" className={`nav-item ${location.pathname === '/rehab' ? 'active' : ''}`}>
-            <span className="nav-icon">🤕</span>
-            <span className="nav-label">Training Room</span>
-          </Link>
-          <Link to="/profile" className={`nav-item ${location.pathname === '/profile' ? 'active' : ''}`}>
-            <span className="nav-icon">👤</span>
-            <span className="nav-label">Profile</span>
-          </Link>
-        </nav>
+            
+            <div className="summary-card next-workout">
+              <h3>Next Workout</h3>
+              {nextWorkout ? (
+                <div className="summary-content">
+                  <div className="summary-title">{nextWorkout.name}</div>
+                  <div className="summary-details">
+                    <span className="summary-focus">{nextWorkout.focus || 'Strength'}</span>
+                  </div>
+                  <Link to={`/workout/${nextWorkout.id}`} className="start-workout-button">
+                    Start Workout
+                  </Link>
+                </div>
+              ) : (
+                <div className="empty-summary">
+                  <p>No upcoming workouts</p>
+                  <button 
+                    className="create-workout-button"
+                    onClick={() => setShowCreatePlanModal(true)}
+                  >
+                    Plan a Workout
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="progress-section">
+            <div className="section-header">
+              <h2>Recent Progress</h2>
+              <Link to="/progress" className="view-all-link">
+                View All
+              </Link>
+            </div>
+            
+            {completedWorkouts.length > 0 ? (
+              <div className="progress-chart">
+                <div className="chart-placeholder">
+                  <div className="chart-bars">
+                    {Array.from({ length: 7 }).map((_, index) => {
+                      const height = Math.random() * 70 + 30;
+                      return (
+                        <div 
+                          key={index} 
+                          className="chart-bar"
+                          style={{ height: `${height}%` }}
+                        ></div>
+                      );
+                    })}
+                  </div>
+                  <div className="chart-labels">
+                    <span>M</span>
+                    <span>T</span>
+                    <span>W</span>
+                    <span>T</span>
+                    <span>F</span>
+                    <span>S</span>
+                    <span>S</span>
+                  </div>
+                </div>
+                <div className="chart-summary">
+                  <div className="summary-stat">
+                    <span className="stat-value">{completedWorkouts.length}</span>
+                    <span className="stat-label">Workouts</span>
+                  </div>
+                  <div className="summary-stat">
+                    <span className="stat-value">
+                      {completedWorkouts.reduce((total, workout) => {
+                        return total + workout.exercises.length;
+                      }, 0)}
+                    </span>
+                    <span className="stat-label">Exercises</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="empty-progress">
+                <p>Complete workouts to see your progress</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
       
-      {showWorkoutCreator && (
-        <WorkoutCreator 
-          userProfile={userProfile}
-          onCreateWorkout={handleCreateWorkout}
-          onCancel={handleCloseWorkoutCreator}
-        />
+      {showCreatePlanModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h2>Create New Workout Plan</h2>
+            <div className="modal-form">
+              <div className="form-group">
+                <label htmlFor="planName">Plan Name</label>
+                <input
+                  type="text"
+                  id="planName"
+                  value={newPlanName}
+                  onChange={(e) => setNewPlanName(e.target.value)}
+                  placeholder="e.g., Upper Body, Leg Day, Full Body"
+                />
+              </div>
+              <div className="modal-buttons">
+                <button 
+                  className="cancel-button"
+                  onClick={() => {
+                    setShowCreatePlanModal(false);
+                    setNewPlanName('');
+                  }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="create-button"
+                  onClick={handleCreatePlan}
+                  disabled={!newPlanName.trim()}
+                >
+                  Create Plan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </Layout>
   );

@@ -1,204 +1,167 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Layout from './Layout';
 import './Login.css';
-import { loginUser, getUserProfile } from '../services/firebase';
+import { signInWithEmailAndPassword, getUserProfile } from '../services/firebase';
 
 function Login() {
+  const [credentials, setCredentials] = useState({
+    email: '',
+    password: ''
+  });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
   const navigate = useNavigate();
   const location = useLocation();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [lastChar, setLastChar] = useState('');
-  const lastCharTimerRef = useRef(null);
-
-  const handleInputChange = (e) => {
-    const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id]: value }));
-    setError(''); // Clear any previous errors
-
-    // Show last character for password field
-    if (id === 'password' && value.length > 0) {
-      const lastCharacter = value[value.length - 1];
-      setLastChar(lastCharacter);
-      clearTimeout(lastCharTimerRef.current);
-      lastCharTimerRef.current = setTimeout(() => setLastChar(''), 1000);
-    }
+  
+  // Get the redirect destination from the location state, or default to /dashboard
+  const destination = location.state?.from || '/dashboard';
+  
+  useEffect(() => {
+    // Clear any errors when component mounts
+    setError('');
+  }, []);
+  
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setCredentials({
+      ...credentials,
+      [name]: value
+    });
+    // Clear error when user starts typing
+    setError('');
   };
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Clear any previous errors
     setError('');
-
-    // Validate form fields
-    if (!formData.email.trim()) {
-      setError('Please enter your email');
+    
+    // Basic form validation
+    if (!credentials.email) {
+      setError('Email is required');
       return;
     }
-
-    if (!formData.password.trim()) {
-      setError('Please enter your password');
+    
+    if (!credentials.password) {
+      setError('Password is required');
       return;
     }
-
+    
     // Email format validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email.trim())) {
+    if (!emailRegex.test(credentials.email)) {
       setError('Please enter a valid email address');
       return;
     }
-
-    setLoading(true);
-
+    
     try {
-      console.log('Attempting login with:', { email: formData.email.trim() });
+      setLoading(true);
       
-      // Login with Firebase
-      const { user, error: loginError } = await loginUser(formData.email.trim(), formData.password);
+      // Attempt to sign in with Firebase
+      const { user, error: signInError } = await signInWithEmailAndPassword(
+        credentials.email,
+        credentials.password
+      );
       
-      if (loginError) {
-        console.error('Firebase login error:', loginError);
+      if (signInError) {
+        console.error("Sign in error:", signInError);
         
-        // Handle specific Firebase auth errors
-        if (loginError.includes("auth/invalid-credential") || 
-            loginError.includes("auth/user-not-found") || 
-            loginError.includes("auth/wrong-password")) {
-          setError('Invalid email or password. Please check your credentials and try again.');
-        } else if (loginError.includes("auth/invalid-email")) {
-          setError('The email address is not valid.');
-        } else if (loginError.includes("auth/user-disabled")) {
-          setError('This account has been disabled. Please contact support.');
-        } else if (loginError.includes("auth/too-many-requests")) {
-          setError('Too many unsuccessful login attempts. Please try again later or reset your password.');
-        } else if (loginError.includes("auth/operation-not-allowed")) {
-          setError('Email/password accounts are not enabled. Please contact support.');
-        } else if (loginError.includes("auth/configuration-not-found")) {
-          setError('Authentication service is not properly configured. Please contact support.');
+        // Handle different Firebase auth errors with user-friendly messages
+        if (
+          signInError.code === 'auth/invalid-credential' || 
+          signInError.code === 'auth/user-not-found' ||
+          signInError.code === 'auth/wrong-password'
+        ) {
+          setError('Invalid email or password');
+        } else if (signInError.code === 'auth/invalid-email') {
+          setError('Invalid email format');
+        } else if (signInError.code === 'auth/user-disabled') {
+          setError('This account has been disabled');
+        } else if (signInError.code === 'auth/too-many-requests') {
+          setError('Too many failed login attempts. Please try again later or reset your password');
+        } else if (signInError.code === 'auth/operation-not-allowed') {
+          setError('Login is currently disabled');
+        } else if (signInError.code === 'auth/configuration-not-found') {
+          setError('Authentication service is not configured correctly');
         } else {
-          setError(loginError);
+          setError('Login failed. Please try again.');
         }
+        
         setLoading(false);
         return;
       }
       
       if (!user) {
-        setError('An error occurred during login. Please try again.');
+        setError('Failed to log in. Please try again.');
         setLoading(false);
         return;
       }
       
-      console.log('Login successful, user ID:', user.uid);
+      console.log(`User logged in successfully: ${user.uid}`);
       
-      // Try to get the user profile from Firestore
+      // Fetch user profile from Firestore
       const { profile } = await getUserProfile(user.uid);
       
-      // For backward compatibility with other components
-      const userProfile = profile || { 
-        id: user.uid, 
-        email: user.email, 
-        name: user.displayName || formData.email.split('@')[0] 
-      };
+      // Navigate to the destination
+      navigate(destination);
       
-      localStorage.setItem('userName', userProfile.name || userProfile.fullName || user.email.split('@')[0]);
-      localStorage.setItem('userProfile', JSON.stringify({
-        ...userProfile,
-        id: user.uid,
-        email: user.email
-      }));
-      
-      // Get the intended destination from location state, or default to dashboard
-      const from = location.state?.from?.pathname || '/dashboard';
-      console.log('Redirecting to:', from);
-      navigate(from, { replace: true });
     } catch (err) {
-      console.error('Unexpected error during login:', err);
-      setError('An unexpected error occurred. Please try again later.');
-    } finally {
+      console.error("Unexpected error during login:", err);
+      setError('An unexpected error occurred. Please try again.');
       setLoading(false);
     }
   };
-
+  
   return (
     <Layout>
-      <div className="auth-container">
-        <div className="auth-box">
-          <div className="auth-header">
-            <h2><span className="floating-text">Nextt</span></h2>
-          </div>
-
+      <div className="login-container">
+        <div className="login-form-container">
+          <h1>Welcome Back</h1>
           {error && <div className="error-message">{error}</div>}
-
-          <form onSubmit={handleSubmit}>
+          
+          <form onSubmit={handleSubmit} className="login-form">
             <div className="form-group">
+              <label htmlFor="email">Email</label>
               <input
                 type="email"
                 id="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="auth-input"
-                autoComplete="email"
+                name="email"
+                value={credentials.email}
+                onChange={handleChange}
+                placeholder="your@email.com"
+                required
               />
             </div>
-
+            
             <div className="form-group">
-              <div className="password-group">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  className="auth-input"
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className={`toggle-password ${showPassword ? 'unlocked' : ''}`}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  data-tooltip={showPassword ? "Hide password" : "Show password"}
-                />
-                <span className="last-char" style={{opacity: lastChar ? 1 : 0, transition: 'opacity 0.5s'}}>{lastChar}</span>
-              </div>
+              <label htmlFor="password">Password</label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={credentials.password}
+                onChange={handleChange}
+                placeholder="********"
+                required
+              />
             </div>
-
-            <Link to="/forgot-password" className="forgot-password-link">
-              Forgot your password?
-            </Link>
-
+            
+            <div className="forgot-password">
+              <Link to="/forgot-password">Forgot Password?</Link>
+            </div>
+            
             <button 
               type="submit" 
-              className="auth-button"
+              className="login-button"
               disabled={loading}
             >
-              {loading ? (
-                <span className="button-content">
-                  <span className="spinner"></span>
-                  Signing in...
-                </span>
-              ) : (
-                'Sign In'
-              )}
+              {loading ? 'Logging In...' : 'Login'}
             </button>
           </form>
-
-          <div className="auth-footer">
-            <p>Ready to reach your Nextt level?</p>
-            <Link to="/register" className="create-account-link" style={{ color: '#d4af37' }}>
-              Create Your Account
-            </Link>
-          </div>
-
-          <div className="help-text">
-            <p>Need help? <Link to="/contact" className="text-link">Contact Support</Link></p>
+          
+          <div className="register-prompt">
+            Don't have an account? <Link to="/register">Sign Up</Link>
           </div>
         </div>
       </div>

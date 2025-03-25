@@ -1,67 +1,96 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faInstagram, faXTwitter } from '@fortawesome/free-brands-svg-icons';
 import BottomNav from './BottomNav';
-import { auth } from '../services/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { auth, signOut } from '../services/firebase';
 
 function Layout({ children }) {
-  const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
   const publicRoutes = ['/', '/login', '/register', '/privacy', '/terms', '/contact', '/feedback', '/features'];
   const isPublicRoute = publicRoutes.includes(location.pathname);
 
   useEffect(() => {
-    // Use Firebase auth state instead of localStorage
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    // Check if user is authenticated with Firebase
+    const unsubscribe = auth.onAuthStateChanged(user => {
       setIsAuthenticated(!!user);
-      
-      // Update localStorage for backward compatibility with other components
-      if (user) {
-        if (!localStorage.getItem('userProfile')) {
-          // If no profile in localStorage, we'll need to handle this in the component
-          // that needs it by fetching from Firebase
-        }
-      } else {
-        // User is signed out
-        localStorage.removeItem('userProfile');
-        localStorage.removeItem('userName');
-      }
     });
     
-    // Cleanup subscription
+    // Clean up subscription
     return () => unsubscribe();
   }, []);
 
-  return (
-    <div className="app-container">
-      {/* Header - shown on all pages */}
-      <header className={`app-header ${isAuthenticated && !isPublicRoute ? 'logged-in' : ''}`}>
-        <div className="header-content">
-          {isAuthenticated && !isPublicRoute ? (
-            <>
-              <div className="header-left">
-                <span className="logo" style={{ color: '#d4af37', cursor: 'default' }}>Nextt</span>
-                <Link to="/progress" className="nav-link" style={{ fontSize: '1.2em', marginLeft: '5px' }}>📈</Link>
-              </div>
-              <div className="header-right">
-                {/* Empty right side */}
-              </div>
-            </>
-          ) : (
-            <>
-              <Link to="/" className="logo">Nextt</Link>
-              <nav className="nav-links">
-                <Link to="/login" className="login-button">Login</Link>
-              </nav>
-            </>
-          )}
-        </div>
-      </header>
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
-      {/* Main content */}
-      {children}
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
+
+  // Don't show navigation on login, register, and password reset pages
+  const hideNavigation = ['/login', '/register', '/forgot-password', '/reset-password'].includes(location.pathname);
+
+  if (hideNavigation) {
+    return <main className="main-content">{children}</main>;
+  }
+
+  return (
+    <div className="layout">
+      <header className="header">
+        <div className="logo">
+          <Link to="/" onClick={closeMenu}>Nextt</Link>
+        </div>
+        <button className="menu-toggle" onClick={toggleMenu}>
+          <span className="hamburger"></span>
+        </button>
+      </header>
+      
+      <div className={`navigation ${isMenuOpen ? 'open' : ''}`}>
+        <nav className="nav">
+          <ul className="nav-list">
+            {isAuthenticated ? (
+              <>
+                <li className="nav-item">
+                  <Link to="/dashboard" onClick={closeMenu}>Dashboard</Link>
+                </li>
+                <li className="nav-item">
+                  <Link to="/progress" onClick={closeMenu}>Progress</Link>
+                </li>
+                <li className="nav-item">
+                  <Link to="/profile" onClick={closeMenu}>Profile</Link>
+                </li>
+                <li className="nav-item">
+                  <button onClick={handleLogout} className="logout-button">Logout</button>
+                </li>
+              </>
+            ) : (
+              <>
+                <li className="nav-item">
+                  <Link to="/login" onClick={closeMenu}>Login</Link>
+                </li>
+                <li className="nav-item">
+                  <Link to="/register" onClick={closeMenu}>Register</Link>
+                </li>
+              </>
+            )}
+          </ul>
+        </nav>
+      </div>
+      
+      <main className="main-content">{children}</main>
 
       {/* Footer - only on public routes */}
       {(isPublicRoute) && (

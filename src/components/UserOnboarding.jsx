@@ -2,294 +2,182 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from './Layout';
 import './UserOnboarding.css';
+import { auth, updateUserProfile, getUserProfile, updateOnboardingStatus } from '../services/firebase';
 
 function UserOnboarding() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    name: '',
-    heightFeet: '',
-    heightInches: '',
-    weight: '',
-    sport: '',
-    position: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
+  const [currentStep, setCurrentStep] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [error, setError] = useState(null);
+  
   useEffect(() => {
-    // Check if user is logged in
-    const userProfile = localStorage.getItem('userProfile');
-    const userName = localStorage.getItem('userName');
+    const checkAuth = async () => {
+      try {
+        setLoading(true);
+        
+        // Check if user is authenticated
+        const user = auth.currentUser;
+        if (!user) {
+          navigate('/login');
+          return;
+        }
+        
+        setIsAuthenticated(true);
+        
+        // Get user profile from Firebase
+        const { profile, error } = await getUserProfile(user.uid);
+        
+        if (error) {
+          console.error("Error getting user profile:", error);
+          setError("Error loading your profile. Please try again.");
+          setLoading(false);
+          return;
+        }
+        
+        if (profile) {
+          setUserProfile(profile);
+          
+          // Check if onboarding is already completed
+          if (profile.onboardingCompleted) {
+            navigate('/dashboard');
+            return;
+          }
+        } else {
+          setError("Profile not found. Please set up your profile first.");
+          navigate('/profile-setup');
+          return;
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Error in onboarding setup:", err);
+        setError("An unexpected error occurred. Please try again.");
+        setLoading(false);
+      }
+    };
     
-    if (!userProfile || !userName) {
-      navigate('/login');
-      return;
-    }
-
-    // Check if onboarding is already completed
-    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
-    if (onboardingCompleted === 'true') {
-      navigate('/dashboard');
-      return;
-    }
-
-    // Pre-fill name from registration
-    const profile = JSON.parse(userProfile);
-    setFormData(prev => ({
-      ...prev,
-      name: userName || profile.fullName || ''
-    }));
+    checkAuth();
   }, [navigate]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setError('');
-  };
-
-  const validateStep = () => {
-    if (step === 1) {
-      if (!formData.name.trim()) {
-        setError('Please enter your name');
-        return false;
-      }
-      if (!formData.heightFeet || !formData.heightInches) {
-        setError('Please enter your height');
-        return false;
-      }
-      if (!formData.weight) {
-        setError('Please enter your weight');
-        return false;
-      }
-    } else if (step === 2) {
-      if (!formData.sport.trim()) {
-        setError('Please select a sport');
-        return false;
-      }
-    }
-    return true;
-  };
-
-  const handleNext = () => {
-    if (validateStep()) {
-      setStep(step + 1);
+  const handleContinue = () => {
+    if (currentStep < 3) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      handleComplete();
     }
   };
 
   const handleBack = () => {
-    setStep(step - 1);
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateStep()) {
-      return;
-    }
+  const handleSkip = () => {
+    handleComplete();
+  };
 
-    setLoading(true);
-
+  const handleComplete = async () => {
     try {
-      // Save user profile data to localStorage
-      const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
-      const updatedProfile = {
-        ...userProfile,
-        heightFeet: formData.heightFeet,
-        heightInches: formData.heightInches,
-        weight: formData.weight,
-        sport: formData.sport,
-        position: formData.position || 'N/A',
-        focus: 'strength', // Default focus value until user creates a workout plan
-        onboardingCompleted: true
-      };
-
-      localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-      localStorage.setItem('onboardingCompleted', 'true');
-
-      // Initialize exercise progress tracking
-      localStorage.setItem('exerciseProgress', JSON.stringify({}));
-
-      // Redirect to dashboard
+      setLoading(true);
+      
+      // Get current user
+      const user = auth.currentUser;
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+      
+      // Update onboarding status in Firebase
+      await updateOnboardingStatus(user.uid, true);
+      
+      // Update any other profile changes if needed
+      if (userProfile) {
+        const updatedProfile = {
+          ...userProfile,
+          onboardingCompleted: true
+        };
+        
+        await updateUserProfile(user.uid, updatedProfile);
+      }
+      
+      // Navigate to dashboard
       navigate('/dashboard');
     } catch (err) {
-      setError('An error occurred. Please try again.');
-    } finally {
+      console.error("Error completing onboarding:", err);
+      setError("Failed to complete onboarding. Please try again.");
       setLoading(false);
     }
   };
 
-  // Updated sports list based on user requirements
-  const sports = [
-    'Basketball', 'Football', 'Volleyball', 'Soccer', 'Baseball & Softball', 
-    'Tennis', 'Sprinting', 'Wrestling', 'General Workout'
-  ];
+  if (loading) {
+    return (
+      <Layout>
+        <div className="loading-message">Loading...</div>
+      </Layout>
+    );
+  }
 
-  // Updated positions based on user requirements
-  const positions = {
-    Basketball: ['Guard', 'Forward', 'Center'],
-    Football: ['Quarterback', 'Running Back', 'Skill Position', 'Linebacker', 'Lineman'],
-    Volleyball: ['Hitter', 'Setter', 'Blocker', 'Libero'],
-    Soccer: ['Striker', 'Midfielder', 'Defender', 'Goalkeeper'],
-    'Baseball & Softball': ['Pitcher', 'Infield', 'Outfield', 'Catcher'],
-    Tennis: [], // No specific positions for Tennis
-    Sprinting: [], // No specific positions for Sprinting
-    Wrestling: [], // No specific positions for Wrestling
-    'General Workout': [] // No specific positions for General Workout
-  };
-
-  const renderStep1 = () => (
-    <>
-      <h2>Tell us about yourself</h2>
-      <div className="form-group">
-        <label htmlFor="name">Name</label>
-        <input
-          type="text"
-          id="name"
-          name="name"
-          value={formData.name}
-          onChange={handleInputChange}
-          placeholder="Your name"
-          className="onboarding-input"
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="height">Height</label>
-        <div className="height-inputs">
-          <div className="height-input-group">
-            <input
-              type="number"
-              id="heightFeet"
-              name="heightFeet"
-              value={formData.heightFeet}
-              onChange={handleInputChange}
-              placeholder="Feet"
-              min="4"
-              max="8"
-              className="onboarding-input"
-            />
-            <span>ft</span>
-          </div>
-          <div className="height-input-group">
-            <input
-              type="number"
-              id="heightInches"
-              name="heightInches"
-              value={formData.heightInches}
-              onChange={handleInputChange}
-              placeholder="Inches"
-              min="0"
-              max="11"
-              className="onboarding-input"
-            />
-            <span>in</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="weight">Weight (lbs)</label>
-        <input
-          type="number"
-          id="weight"
-          name="weight"
-          value={formData.weight}
-          onChange={handleInputChange}
-          placeholder="Your weight in pounds"
-          min="50"
-          max="400"
-          className="onboarding-input"
-        />
-      </div>
-    </>
-  );
-
-  const renderStep2 = () => (
-    <>
-      <h2>Your Sport</h2>
-      <div className="form-group">
-        <label htmlFor="sport">What sport do you play?</label>
-        <select
-          id="sport"
-          name="sport"
-          value={formData.sport}
-          onChange={handleInputChange}
-          className="onboarding-select"
-        >
-          <option value="">Select a sport</option>
-          {sports.map(sport => (
-            <option key={sport} value={sport}>{sport}</option>
-          ))}
-        </select>
-      </div>
-
-      {formData.sport && positions[formData.sport] && (
-        <div className="form-group">
-          <label htmlFor="position">What position do you play?</label>
-          <select
-            id="position"
-            name="position"
-            value={formData.position}
-            onChange={handleInputChange}
-            className="onboarding-select"
-          >
-            <option value="">Select a position</option>
-            {positions[formData.sport].map(position => (
-              <option key={position} value={position}>{position}</option>
-            ))}
-          </select>
-        </div>
-      )}
-    </>
-  );
+  if (error) {
+    return (
+      <Layout>
+        <div className="error-message">{error}</div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
       <div className="onboarding-container">
-        <div className="onboarding-box">
-          <div className="onboarding-progress">
-            <div className={`progress-step ${step >= 1 ? 'active' : ''}`}>1</div>
-            <div className="progress-line"></div>
-            <div className={`progress-step ${step >= 2 ? 'active' : ''}`}>2</div>
+        <div className="onboarding-header">
+          <h1>Welcome to <span className="brand-text">Nextt</span></h1>
+          <div className="step-indicator">
+            <div className={`step ${currentStep >= 1 ? 'active' : ''}`}></div>
+            <div className={`step ${currentStep >= 2 ? 'active' : ''}`}></div>
+            <div className={`step ${currentStep >= 3 ? 'active' : ''}`}></div>
           </div>
+        </div>
 
-          {error && <div className="error-message">{error}</div>}
-
-          <form onSubmit={handleSubmit}>
-            {step === 1 && renderStep1()}
-            {step === 2 && renderStep2()}
-
-            <div className="onboarding-buttons">
-              {step > 1 && (
-                <button 
-                  type="button" 
-                  onClick={handleBack}
-                  className="back-button"
-                >
-                  Back
-                </button>
-              )}
-              
-              {step < 2 ? (
-                <button 
-                  type="button" 
-                  onClick={handleNext}
-                  className="next-button"
-                >
-                  Next
-                </button>
-              ) : (
-                <button 
-                  type="submit" 
-                  className="submit-button"
-                  disabled={loading}
-                >
-                  {loading ? 'Saving...' : 'Complete Setup'}
-                </button>
-              )}
+        <div className="onboarding-content">
+          {currentStep === 1 && (
+            <div className="onboarding-step">
+              <h2>Personalized Workout Plans</h2>
+              <div className="feature-image feature-1"></div>
+              <p>Your workout plans are tailored to your sport, position, and body type to maximize your athletic potential.</p>
             </div>
-          </form>
+          )}
+
+          {currentStep === 2 && (
+            <div className="onboarding-step">
+              <h2>Progress Tracking</h2>
+              <div className="feature-image feature-2"></div>
+              <p>Track your improvement over time with detailed metrics and visualizations of your progress.</p>
+            </div>
+          )}
+
+          {currentStep === 3 && (
+            <div className="onboarding-step">
+              <h2>Injury Prevention</h2>
+              <div className="feature-image feature-3"></div>
+              <p>Access sport-specific rehab and prehab exercises to prevent injuries and recover faster.</p>
+            </div>
+          )}
+        </div>
+
+        <div className="onboarding-actions">
+          {currentStep > 1 && (
+            <button className="back-button" onClick={handleBack}>Back</button>
+          )}
+          
+          <button className="action-button" onClick={handleContinue}>
+            {currentStep < 3 ? 'Continue' : 'Get Started'}
+          </button>
+          
+          {currentStep < 3 && (
+            <button className="skip-button" onClick={handleSkip}>Skip Tour</button>
+          )}
         </div>
       </div>
     </Layout>

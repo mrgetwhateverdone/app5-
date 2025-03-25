@@ -2,38 +2,73 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Layout from './Layout';
 import './Profile.css';
+import { auth, getUserProfile, updateUserProfile, signOut, getExerciseWeights } from '../services/firebase';
 
 function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [userProfile, setUserProfile] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [weightHistory, setWeightHistory] = useState({});
+  const [isEditing, setIsEditing] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
   const [profileImage, setProfileImage] = useState(null);
   const [completedWorkouts, setCompletedWorkouts] = useState({});
   const [selectedWorkout, setSelectedWorkout] = useState(null);
   const [mostImprovedExercise, setMostImprovedExercise] = useState(null);
 
   useEffect(() => {
-    const storedProfile = localStorage.getItem('userProfile');
-    const storedName = localStorage.getItem('userName');
-    const storedWorkouts = localStorage.getItem('completedWorkouts');
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        const user = auth.currentUser;
+        
+        if (!user) {
+          navigate('/login');
+          return;
+        }
+        
+        // Get user profile from Firebase
+        const { profile, error } = await getUserProfile(user.uid);
+        
+        if (error) {
+          console.error("Error getting user profile:", error);
+          setError("Error loading your profile. Please try again.");
+          setLoading(false);
+          return;
+        }
+        
+        if (profile) {
+          setProfile(profile);
+          
+          // Get exercise weights history
+          const weights = await getExerciseWeights(user.uid);
+          setWeightHistory(weights || {});
+          
+          // Get completed workouts
+          const storedWorkouts = localStorage.getItem('completedWorkouts');
+          if (storedWorkouts) {
+            const parsedWorkouts = JSON.parse(storedWorkouts);
+            setCompletedWorkouts(parsedWorkouts);
+            calculateMostImprovedExercise(parsedWorkouts);
+          }
+        } else {
+          navigate('/profile-setup');
+          return;
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Error loading profile:", err);
+        setError("An unexpected error occurred. Please try again.");
+        setLoading(false);
+      }
+    };
     
-    if (!storedProfile || !storedName) {
-      navigate('/login');
-      return;
-    }
-
-    setUserProfile({
-      name: storedName,
-      ...JSON.parse(storedProfile)
-    });
-
-    if (storedWorkouts) {
-      const parsedWorkouts = JSON.parse(storedWorkouts);
-      setCompletedWorkouts(parsedWorkouts);
-      calculateMostImprovedExercise(parsedWorkouts);
-    }
+    loadProfile();
   }, [navigate]);
-  
+
   const calculateMostImprovedExercise = (workouts) => {
     // Track the first and last weight for each exercise
     const exerciseProgress = {};
@@ -99,6 +134,51 @@ function Profile() {
     setMostImprovedExercise(mostImproved);
   };
 
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setProfile({
+      ...profile,
+      [name]: value
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setLoading(true);
+      const user = auth.currentUser;
+      
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+      
+      // Update user profile in Firebase
+      await updateUserProfile(user.uid, profile);
+      
+      setIsEditing(false);
+      setMessage('Profile updated successfully');
+      setTimeout(() => setMessage(''), 3000);
+      
+      setLoading(false);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      setError('Failed to update profile. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error("Error signing out:", error);
+      setError('Failed to log out. Please try again.');
+    }
+  };
+
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -127,7 +207,28 @@ function Profile() {
     setSelectedWorkout(null);
   };
 
-  if (!userProfile) return null;
+  if (loading && !profile) {
+    return (
+      <Layout>
+        <div className="profile-container">
+          <div className="loading-message">Loading profile...</div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <Layout>
+        <div className="profile-container">
+          <div className="error-message">{error || 'Profile not found. Please set up your profile.'}</div>
+          <button className="primary-button" onClick={() => navigate('/profile-setup')}>
+            Set Up Profile
+          </button>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout location={location}>
@@ -139,7 +240,7 @@ function Profile() {
                 <img src={profileImage} alt="Profile" />
               ) : (
                 <div className="profile-placeholder">
-                  {userProfile.name.charAt(0).toUpperCase()}
+                  {profile.fullName?.charAt(0).toUpperCase()}
                 </div>
               )}
               <label className="image-upload-label" htmlFor="profile-upload">
@@ -154,14 +255,8 @@ function Profile() {
               />
             </div>
           </div>
-          <h1 className="profile-name">{userProfile.name}</h1>
-          <button className="logout-button" onClick={() => {
-            // Save any pending data
-            localStorage.removeItem('userProfile');
-            localStorage.removeItem('userName');
-            // Navigate to home page
-            navigate('/');
-          }}>
+          <h1 className="profile-name">{profile.fullName}</h1>
+          <button className="logout-button" onClick={handleLogout}>
             <span className="logout-icon">🔒</span>
             Log Out
           </button>
@@ -170,20 +265,20 @@ function Profile() {
         <div className="stats-container">
           <div className="stat-item">
             <span className="stat-label">Height</span>
-            <span className="stat-value">{userProfile.heightFeet}'{userProfile.heightInches}"</span>
+            <span className="stat-value">{profile.heightFeet}'{profile.heightInches}"</span>
           </div>
           <div className="stat-item">
             <span className="stat-label">Weight</span>
-            <span className="stat-value">{userProfile.weight} lbs</span>
+            <span className="stat-value">{profile.weight} lbs</span>
           </div>
           <div className="stat-item">
             <span className="stat-label">Sport</span>
-            <span className="stat-value">{userProfile.sport}</span>
+            <span className="stat-value">{profile.sport}</span>
           </div>
-          {userProfile.position && (
+          {profile.position && (
             <div className="stat-item">
               <span className="stat-label">Position</span>
-              <span className="stat-value">{userProfile.position}</span>
+              <span className="stat-value">{profile.position}</span>
             </div>
           )}
           <div className="stat-item">

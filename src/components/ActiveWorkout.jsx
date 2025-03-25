@@ -1,629 +1,486 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './ActiveWorkout.css';
 import Layout from './Layout';
-import { auth, saveWorkoutSession } from '../services/firebase';
+import { 
+  auth,
+  getWorkoutPlanById, 
+  completeWorkoutSession, 
+  getExerciseWeights, 
+  saveExerciseWeight
+} from '../services/firebase';
+import { useParams, useNavigate } from 'react-router-dom';
 
-function ActiveWorkout({ workout, onComplete, onClose }) {
-  const [exercises, setExercises] = useState(workout && workout.exercises ? 
-    workout.exercises.map(exercise => ({
-      name: exercise.name || exercise,
-      sets: Array(exercise.sets || 3).fill({}).map(() => ({ 
-        weight: '',
-        reps: '',
-        completed: false 
-      })),
-      type: 'weighted', // or 'timed'
-      isCustom: false,
-      previousWeights: []
-    })) : []);
-  const [customExercises, setCustomExercises] = useState([]);
-  const [showAddExercise, setShowAddExercise] = useState(false);
-  const [newExercise, setNewExercise] = useState({
-    name: '',
-    type: 'weighted',
-    sets: 3,
-    timePerSet: 30, // in seconds
-  });
-  const [currentExercise, setCurrentExercise] = useState(0);
-  const [currentSet, setCurrentSet] = useState(0);
-  const [showTimer, setShowTimer] = useState(false);
-  const [time, setTime] = useState(45); // Rest timer in seconds
-  const [timerActive, setTimerActive] = useState(false);
-  const [countdown, setCountdown] = useState(3);
-  const [showCountdown, setShowCountdown] = useState(false);
-  const [exerciseHistory, setExerciseHistory] = useState({});
-  const [showExerciseOptions, setShowExerciseOptions] = useState(false);
-  const [currentWeight, setCurrentWeight] = useState('');
-  const [currentReps, setCurrentReps] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
+function ActiveWorkout() {
+  const { planId } = useParams();
+  const navigate = useNavigate();
+  const [workoutPlan, setWorkoutPlan] = useState(null);
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const [sets, setSets] = useState([]);
+  const [timer, setTimer] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [isResting, setIsResting] = useState(false);
+  const [restTimer, setRestTimer] = useState(0);
   const [workoutComplete, setWorkoutComplete] = useState(false);
-  const [showPreviousWeight, setShowPreviousWeight] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [exerciseWeights, setExerciseWeights] = useState({});
+  const intervalRef = useRef(null);
+  const restIntervalRef = useRef(null);
 
   useEffect(() => {
-    // Load exercise history from localStorage for now, but we'll update this to use Firebase
-    const history = JSON.parse(localStorage.getItem('exerciseHistory') || '{}');
-    setExerciseHistory(history);
-    
-    // Load previous weights for each exercise
-    loadPreviousWeights();
-  }, []);
-
-  const loadPreviousWeights = async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-    
-    try {
-      // For now, we'll just get this from localStorage as a fallback
-      const savedWeights = JSON.parse(localStorage.getItem('exerciseWeights') || '{}');
-      
-      // Update exercises with previous weights
-      const updatedExercises = exercises.map(exercise => {
-        const previousWeights = savedWeights[exercise.name] || [];
-        return {
-          ...exercise,
-          previousWeights
-        };
-      });
-      
-      setExercises(updatedExercises);
-    } catch (error) {
-      console.error("Error loading previous weights:", error);
-    }
-  };
-
-  useEffect(() => {
-    let interval;
-    if (timerActive && time > 0) {
-      interval = setInterval(() => {
-        setTime(prev => prev - 1);
-      }, 1000);
-    } else if (time === 0) {
-      setTimerActive(false);
-      setShowTimer(false);
-      setTime(45);
-      // Auto-advance to next set or exercise
-      advanceToNextSetOrExercise();
-    }
-    return () => clearInterval(interval);
-  }, [timerActive, time]);
-
-  useEffect(() => {
-    let interval;
-    if (showCountdown && countdown > 0) {
-      interval = setInterval(() => {
-        setCountdown(prev => prev - 1);
-      }, 1000);
-    } else if (countdown === 0) {
-      setShowCountdown(false);
-      setCountdown(3);
-      startExerciseTimer();
-    }
-    return () => clearInterval(interval);
-  }, [showCountdown, countdown]);
-
-  const startExerciseTimer = () => {
-    const allExercises = [...exercises, ...customExercises];
-    if (currentExercise >= allExercises.length) return;
-    
-    const exercise = allExercises[currentExercise];
-    if (exercise.type === 'timed') {
-      setTimerActive(true);
-      setTime(exercise.timePerSet || 30);
-    }
-  };
-  
-  const advanceToNextSetOrExercise = () => {
-    const allExercises = [...exercises, ...customExercises];
-    if (currentExercise >= allExercises.length) return;
-    
-    const exercise = allExercises[currentExercise];
-    
-    if (currentSet + 1 < exercise.sets.length) {
-      // Move to next set of current exercise
-      setCurrentSet(currentSet + 1);
-      setCurrentWeight('');
-      setCurrentReps('');
-    } else {
-      // Check if this was the last exercise
-      if (currentExercise + 1 >= allExercises.length) {
-        // Workout complete
-        finishWorkout();
-      } else {
-        // Move to next exercise
-        setCurrentExercise(currentExercise + 1);
-        setCurrentSet(0);
-        setCurrentWeight('');
-        setCurrentReps('');
-      }
-    }
-  };
-
-  const handleAddCustomExercise = () => {
-    if (!newExercise.name) return;
-
-    // Save to exercise history
-    const updatedHistory = {
-      ...exerciseHistory,
-      [newExercise.name.toLowerCase()]: {
-        name: newExercise.name,
-        type: newExercise.type,
-        lastUsed: new Date().toISOString()
-      }
-    };
-    localStorage.setItem('exerciseHistory', JSON.stringify(updatedHistory));
-    setExerciseHistory(updatedHistory);
-
-    const customExercise = {
-      name: newExercise.name,
-      type: newExercise.type,
-      sets: Array(newExercise.sets).fill({}).map(() => ({ 
-        weight: '',
-        reps: '',
-        completed: false 
-      })),
-      isCustom: true,
-      timePerSet: newExercise.type === 'timed' ? newExercise.timePerSet : null,
-      previousWeights: []
-    };
-
-    setCustomExercises(prev => [...prev, customExercise]);
-    setShowAddExercise(false);
-    setNewExercise({
-      name: '',
-      type: 'weighted',
-      sets: 3,
-      timePerSet: 30
-    });
-  };
-
-  const handleSetComplete = () => {
-    const allExercises = [...exercises, ...customExercises];
-    if (currentExercise >= allExercises.length) return;
-    
-    const exercise = allExercises[currentExercise];
-    
-    // For weighted exercises, validate input
-    if (exercise.type === 'weighted' && (!currentWeight || !currentReps)) {
-      alert('Please enter both weight and reps');
-      return;
-    }
-    
-    // Update the completed set
-    const updatedExercises = allExercises.map((ex, i) => {
-      if (i === currentExercise) {
-        const updatedSets = [...ex.sets];
-        updatedSets[currentSet] = {
-          weight: exercise.type === 'weighted' ? currentWeight : null,
-          reps: exercise.type === 'weighted' ? currentReps : null,
-          completed: true
-        };
+    const loadWorkoutAndWeights = async () => {
+      try {
+        setLoading(true);
         
-        return {
-          ...ex,
-          sets: updatedSets
-        };
+        const user = auth.currentUser;
+        if (!user) {
+          navigate('/login');
+          return;
+        }
+        
+        // Load workout plan from Firebase
+        const { plan, error: planError } = await getWorkoutPlanById(planId);
+        
+        if (planError) {
+          console.error("Error loading workout plan:", planError);
+          setError("Failed to load workout plan");
+          setLoading(false);
+          return;
+        }
+        
+        if (!plan) {
+          setError("Workout plan not found");
+          setLoading(false);
+          return;
+        }
+        
+        setWorkoutPlan(plan);
+        
+        // Initialize sets data structure for tracking
+        const initialSets = [];
+        for (let i = 0; i < plan.exercises.length; i++) {
+          const exercise = plan.exercises[i];
+          initialSets[i] = Array(exercise.sets).fill().map(() => ({
+            completed: false,
+            weight: 0,
+            reps: exercise.reps
+          }));
+        }
+        setSets(initialSets);
+        
+        // Load previous exercise weights from Firebase
+        const weights = await getExerciseWeights(user.uid);
+        setExerciseWeights(weights || {});
+        
+        // Pre-fill weights based on previous data
+        if (weights) {
+          const updatedSets = [...initialSets];
+          for (let i = 0; i < plan.exercises.length; i++) {
+            const exerciseName = plan.exercises[i].name;
+            if (weights[exerciseName]) {
+              const lastEntry = Object.entries(weights[exerciseName])
+                .sort((a, b) => new Date(b[0]) - new Date(a[0]))[0];
+              
+              if (lastEntry) {
+                const lastWeight = lastEntry[1];
+                updatedSets[i] = updatedSets[i].map(set => ({
+                  ...set,
+                  weight: lastWeight
+                }));
+              }
+            }
+          }
+          setSets(updatedSets);
+        }
+        
+        // Start the workout timer
+        setIsTimerRunning(true);
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Error setting up workout:", err);
+        setError("Failed to set up workout");
+        setLoading(false);
       }
-      return ex;
-    });
+    };
     
-    // Update state with the new exercises
-    setExercises(updatedExercises.filter(ex => !ex.isCustom));
-    setCustomExercises(updatedExercises.filter(ex => ex.isCustom));
+    loadWorkoutAndWeights();
     
-    // Save weight to history for this exercise
-    if (exercise.type === 'weighted' && currentWeight) {
-      const weightRecord = {
-        weight: currentWeight,
-        reps: currentReps,
-        date: new Date().toISOString()
-      };
-      
-      // For now, store in localStorage as a fallback
-      const savedWeights = JSON.parse(localStorage.getItem('exerciseWeights') || '{}');
-      const exerciseWeights = savedWeights[exercise.name] || [];
-      exerciseWeights.unshift(weightRecord); // Add to beginning of array
-      
-      // Keep only the last 10 records
-      if (exerciseWeights.length > 10) {
-        exerciseWeights.pop();
-      }
-      
-      savedWeights[exercise.name] = exerciseWeights;
-      localStorage.setItem('exerciseWeights', JSON.stringify(savedWeights));
+    // Clean up function to clear intervals
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (restIntervalRef.current) clearInterval(restIntervalRef.current);
+    };
+  }, [planId, navigate]);
+
+  // Timer for tracking workout duration
+  useEffect(() => {
+    if (isTimerRunning) {
+      intervalRef.current = setInterval(() => {
+        setTimer(prevTimer => prevTimer + 1);
+      }, 1000);
+    } else if (intervalRef.current) {
+      clearInterval(intervalRef.current);
     }
     
-    // Start rest timer if not the last set or exercise
-    if (currentSet + 1 < exercise.sets.length || currentExercise + 1 < allExercises.length) {
-      setShowTimer(true);
-      setTimerActive(true);
-      setTime(45);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isTimerRunning]);
+
+  // Timer for rest periods
+  useEffect(() => {
+    if (isResting && restTimer > 0) {
+      restIntervalRef.current = setInterval(() => {
+        setRestTimer(prevTimer => {
+          if (prevTimer <= 1) {
+            clearInterval(restIntervalRef.current);
+            setIsResting(false);
+            return 0;
+          }
+          return prevTimer - 1;
+        });
+      }, 1000);
+    } else if (restIntervalRef.current) {
+      clearInterval(restIntervalRef.current);
+    }
+    
+    return () => {
+      if (restIntervalRef.current) clearInterval(restIntervalRef.current);
+    };
+  }, [isResting, restTimer]);
+
+  const formatTime = (timeInSeconds) => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = timeInSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const handleWeightChange = (setIndex, value) => {
+    const newSets = [...sets];
+    const numericValue = value === '' ? 0 : Number(value);
+    newSets[currentExerciseIndex][setIndex].weight = numericValue;
+    setSets(newSets);
+  };
+
+  const handleSetComplete = async (setIndex) => {
+    // Update set completion status
+    const newSets = [...sets];
+    newSets[currentExerciseIndex][setIndex].completed = true;
+    setSets(newSets);
+    
+    // Save the weight used for this exercise to Firebase
+    const exerciseName = workoutPlan.exercises[currentExerciseIndex].name;
+    const weight = newSets[currentExerciseIndex][setIndex].weight;
+    
+    if (weight > 0) {
+      try {
+        const user = auth.currentUser;
+        if (user) {
+          await saveExerciseWeight(user.uid, exerciseName, weight);
+        }
+      } catch (err) {
+        console.error("Error saving exercise weight:", err);
+      }
+    }
+    
+    // Check if all sets are completed for current exercise
+    const allSetsCompleted = newSets[currentExerciseIndex].every(set => set.completed);
+    
+    if (allSetsCompleted) {
+      // Move to next exercise or complete workout
+      if (currentExerciseIndex < workoutPlan.exercises.length - 1) {
+        // Start rest timer
+        setRestTimer(60); // 60 seconds rest between exercises
+        setIsResting(true);
+        
+        // After rest period completes, setIsResting will be set to false
+        // by the rest timer effect
+      } else {
+        // Workout is complete
+        await completeWorkout();
+      }
     } else {
-      // Last set of last exercise - workout complete
-      finishWorkout();
+      // Start a shorter rest timer between sets
+      setRestTimer(30); // 30 seconds rest between sets
+      setIsResting(true);
     }
   };
 
-  const finishWorkout = async () => {
+  const moveToNextExercise = () => {
+    if (currentExerciseIndex < workoutPlan.exercises.length - 1) {
+      setCurrentExerciseIndex(currentExerciseIndex + 1);
+    } else {
+      completeWorkout();
+    }
+  };
+
+  const skipRest = () => {
+    setIsResting(false);
+    setRestTimer(0);
+    
+    // Check if all sets are completed for current exercise
+    const allSetsCompleted = sets[currentExerciseIndex].every(set => set.completed);
+    
+    if (allSetsCompleted && currentExerciseIndex < workoutPlan.exercises.length - 1) {
+      // Move to the next exercise
+      setCurrentExerciseIndex(currentExerciseIndex + 1);
+    }
+  };
+
+  const completeWorkout = async () => {
+    setIsTimerRunning(false);
     setWorkoutComplete(true);
-    setIsSaving(true);
     
     try {
       const user = auth.currentUser;
-      if (!user) {
-        console.error("User not authenticated");
-        onComplete({
-          exercises: [...exercises, ...customExercises],
-          completedAt: new Date().toISOString()
-        });
-        return;
-      }
+      if (!user) return;
       
-      // Save workout to Firebase
-      const workoutData = {
-        exercises: [...exercises, ...customExercises].map(ex => ({
-          name: ex.name,
-          type: ex.type,
-          sets: ex.sets.filter(set => set.completed)
-        })),
-        workoutName: workout.day,
-        duration: calculateWorkoutDuration()
+      // Prepare workout summary data
+      const completedExercises = workoutPlan.exercises.map((exercise, index) => ({
+        name: exercise.name,
+        sets: sets[index].map(set => ({
+          completed: set.completed,
+          weight: set.weight,
+          reps: set.reps
+        }))
+      }));
+      
+      const workoutSummary = {
+        planId: planId,
+        planName: workoutPlan.name,
+        date: new Date().toISOString(),
+        duration: timer,
+        exercises: completedExercises
       };
       
-      const result = await saveWorkoutSession(user.uid, workoutData);
+      // Save completed workout to Firebase
+      await completeWorkoutSession(user.uid, workoutSummary);
       
-      if (result.error) {
-        console.error("Error saving workout:", result.error);
-      }
-      
-      // Notify parent component
-      onComplete(workoutData);
-    } catch (error) {
-      console.error("Error completing workout:", error);
-    } finally {
-      setIsSaving(false);
+    } catch (err) {
+      console.error("Error saving workout completion:", err);
+      setError("Failed to save workout results");
     }
   };
-  
-  const calculateWorkoutDuration = () => {
-    // In a real app, you'd track the actual duration
-    // For now, just generate a reasonable estimate
-    const allExercises = [...exercises, ...customExercises];
-    const completedSets = allExercises.reduce((total, ex) => {
-      return total + ex.sets.filter(set => set.completed).length;
-    }, 0);
+
+  const restartWorkout = () => {
+    // Reset all workout state
+    setCurrentExerciseIndex(0);
+    setTimer(0);
+    setIsTimerRunning(true);
+    setIsResting(false);
+    setRestTimer(0);
+    setWorkoutComplete(false);
     
-    // Estimate: 1 minute per set + rest time
-    return completedSets * 1.75; // minutes
+    // Reset set completion status but keep weights
+    const resetSets = sets.map(exerciseSets => 
+      exerciseSets.map(set => ({
+        ...set,
+        completed: false
+      }))
+    );
+    setSets(resetSets);
   };
 
-  const handleSkipRest = () => {
-    setTimerActive(false);
-    setShowTimer(false);
-    setTime(45);
-    advanceToNextSetOrExercise();
+  const exitWorkout = () => {
+    navigate('/dashboard');
   };
 
-  const handleSkipSet = () => {
-    advanceToNextSetOrExercise();
-  };
-
-  const startExercise = () => {
-    setShowCountdown(true);
-  };
-
-  const handleExerciseSearch = (searchTerm) => {
-    const matches = Object.values(exerciseHistory)
-      .filter(ex => ex.name.toLowerCase().includes(searchTerm.toLowerCase()))
-      .sort((a, b) => new Date(b.lastUsed) - new Date(a.lastUsed));
-    return matches;
-  };
-  
-  const getLastWeight = () => {
-    const allExercises = [...exercises, ...customExercises];
-    if (currentExercise >= allExercises.length) return null;
-    
-    const exercise = allExercises[currentExercise];
-    if (exercise.previousWeights && exercise.previousWeights.length > 0) {
-      return exercise.previousWeights[0];
-    }
-    return null;
-  };
-  
-  const togglePreviousWeight = () => {
-    setShowPreviousWeight(!showPreviousWeight);
-  };
-
-  // Safety check for missing workout data
-  if (!workout || !workout.day) {
+  if (loading) {
     return (
       <Layout>
-        <div className="active-workout error-state">
-          <div className="workout-header">
-            <button className="close-button" onClick={onClose}>×</button>
-            <h2>Workout Error</h2>
-          </div>
-          <div className="error-message">
-            <p>There was a problem loading your workout. Please go back and try again.</p>
-            <button className="primary-button" onClick={onClose}>Return to Dashboard</button>
-          </div>
+        <div className="active-workout-container">
+          <div className="loading-message">Loading workout...</div>
         </div>
       </Layout>
     );
   }
-  
-  // If workout is complete, show summary
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="active-workout-container">
+          <div className="error-message">{error}</div>
+          <button className="secondary-button" onClick={() => navigate('/dashboard')}>
+            Return to Dashboard
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!workoutPlan) {
+    return (
+      <Layout>
+        <div className="active-workout-container">
+          <div className="error-message">Workout plan not found</div>
+          <button className="secondary-button" onClick={() => navigate('/dashboard')}>
+            Return to Dashboard
+          </button>
+        </div>
+      </Layout>
+    );
+  }
+
   if (workoutComplete) {
     return (
       <Layout>
-        <div className="active-workout">
-          <div className="workout-header">
-            <button className="close-button" onClick={onClose}>×</button>
-            <h2>Workout Complete!</h2>
-          </div>
-          
+        <div className="active-workout-container">
           <div className="workout-complete">
-            <div className="complete-icon">🏆</div>
-            <h3>Great Job!</h3>
-            <p>You've completed your workout for today.</p>
-            
+            <h1>Workout Complete!</h1>
             <div className="workout-summary">
-              <div className="summary-stat">
-                <span className="stat-label">Exercises</span>
-                <span className="stat-value">{exercises.length + customExercises.length}</span>
-              </div>
-              <div className="summary-stat">
-                <span className="stat-label">Sets</span>
-                <span className="stat-value">
-                  {[...exercises, ...customExercises].reduce((total, ex) => {
-                    return total + ex.sets.filter(set => set.completed).length;
-                  }, 0)}
-                </span>
-              </div>
-              <div className="summary-stat">
-                <span className="stat-label">Duration</span>
-                <span className="stat-value">{Math.round(calculateWorkoutDuration())} min</span>
-              </div>
+              <p><strong>Workout:</strong> {workoutPlan.name}</p>
+              <p><strong>Duration:</strong> {formatTime(timer)}</p>
+              <p><strong>Exercises Completed:</strong> {workoutPlan.exercises.length}</p>
             </div>
-            
-            {isSaving ? (
-              <div className="saving-indicator">Saving your progress...</div>
-            ) : (
-              <button className="primary-button" onClick={onClose}>
-                Return to Dashboard
+            <div className="action-buttons">
+              <button className="primary-button" onClick={restartWorkout}>
+                Restart Workout
               </button>
-            )}
+              <button className="secondary-button" onClick={exitWorkout}>
+                Back to Dashboard
+              </button>
+            </div>
           </div>
         </div>
       </Layout>
     );
   }
 
-  // Get the current exercise and set
-  const allExercises = [...exercises, ...customExercises];
-  const currentExerciseData = allExercises[currentExercise];
-  const lastWeight = getLastWeight();
-  
+  const currentExercise = workoutPlan.exercises[currentExerciseIndex];
+
   return (
     <Layout>
-      <div className="active-workout">
+      <div className="active-workout-container">
         <div className="workout-header">
-          <button className="close-button" onClick={onClose}>×</button>
-          <h2>Workout {workout.day}</h2>
-        </div>
-
-      {showAddExercise ? (
-        <div className="add-exercise-form">
-          <input
-            type="text"
-            placeholder="Exercise name"
-            value={newExercise.name}
-            onChange={(e) => {
-              setNewExercise(prev => ({ ...prev, name: e.target.value }));
-              const matches = handleExerciseSearch(e.target.value);
-              // Show matches in UI
-            }}
-          />
-          <div className="exercise-type-buttons">
-            <button
-              className={`type-button ${newExercise.type === 'weighted' ? 'active' : ''}`}
-              onClick={() => setNewExercise(prev => ({ ...prev, type: 'weighted' }))}
-            >
-              Weighted
-            </button>
-            <button
-              className={`type-button ${newExercise.type === 'timed' ? 'active' : ''}`}
-              onClick={() => setNewExercise(prev => ({ ...prev, type: 'timed' }))}
-            >
-              Timed
-            </button>
-          </div>
-          {newExercise.type === 'timed' && (
-            <input
-              type="number"
-              placeholder="Time per set (seconds)"
-              value={newExercise.timePerSet}
-              onChange={(e) => setNewExercise(prev => ({ ...prev, timePerSet: parseInt(e.target.value) }))}
-            />
-          )}
-          <input
-            type="number"
-            placeholder="Number of sets"
-            value={newExercise.sets}
-            onChange={(e) => setNewExercise(prev => ({ ...prev, sets: parseInt(e.target.value) }))}
-          />
-          <div className="button-group">
-            <button onClick={() => setShowAddExercise(false)}>Cancel</button>
-            <button onClick={handleAddCustomExercise}>Add Exercise</button>
+          <h1>{workoutPlan.name}</h1>
+          <div className="workout-timer">
+            <span className="timer-label">Workout Time:</span>
+            <span className="timer-value">{formatTime(timer)}</span>
           </div>
         </div>
-      ) : showCountdown ? (
-        <div className="countdown">
-          <div className="countdown-number">{countdown}</div>
-        </div>
-      ) : showTimer ? (
-        <div className="rest-timer">
-          <div className="timer-circle">
-            <svg viewBox="0 0 100 100">
-              <circle 
-                cx="50" cy="50" r="45" 
-                fill="none" 
-                stroke="#eee" 
-                strokeWidth="5"
-              />
-              <circle 
-                cx="50" cy="50" r="45" 
-                fill="none" 
-                stroke="#d4af37" 
-                strokeWidth="5"
-                strokeDasharray="283"
-                strokeDashoffset={283 - (283 * (time / 45))}
-                transform="rotate(-90 50 50)"
-              />
-            </svg>
-            <div className="timer-text">{time}</div>
-          </div>
-          <div className="timer-label">Rest Time</div>
-          <button className="skip-button" onClick={handleSkipRest}>Skip Rest</button>
-        </div>
-      ) : currentExerciseData ? (
-        <div className="current-exercise">
-          <div className="exercise-progress">
-            <div className="progress-bar">
+        
+        <div className="exercise-progress">
+          <div className="progress-indicator">
+            {workoutPlan.exercises.map((_, index) => (
               <div 
-                className="progress-fill" 
-                style={{ 
-                  width: `${(((currentExercise * currentExerciseData.sets.length) + currentSet) / 
-                    (allExercises.reduce((total, ex) => total + ex.sets.length, 0))) * 100}%` 
-                }}
+                key={index} 
+                className={`progress-dot ${index < currentExerciseIndex ? 'completed' : index === currentExerciseIndex ? 'current' : ''}`}
               ></div>
-            </div>
-            <div className="progress-text">
-              Exercise {currentExercise + 1}/{allExercises.length}
-            </div>
+            ))}
           </div>
-          
-          <div className="exercise-header">
-            <h3>{currentExerciseData.name}</h3>
-            <div className="set-indicator">
-              Set {currentSet + 1}/{currentExerciseData.sets.length}
-            </div>
+          <div className="exercise-counter">
+            Exercise {currentExerciseIndex + 1} of {workoutPlan.exercises.length}
           </div>
-          
-          {currentExerciseData.type === 'weighted' ? (
-            <div className="weight-input-section">
-              {lastWeight && (
-                <button 
-                  className="previous-weight-toggle"
-                  onClick={togglePreviousWeight}
+        </div>
+        
+        {isResting ? (
+          <div className="rest-period">
+            <h2>Rest Period</h2>
+            <div className="rest-timer">{formatTime(restTimer)}</div>
+            <p>Next exercise: {
+              currentExerciseIndex < workoutPlan.exercises.length - 1 
+                ? workoutPlan.exercises[currentExerciseIndex + 1].name 
+                : 'Workout Complete'
+            }</p>
+            <button className="skip-rest-button" onClick={skipRest}>
+              Skip Rest
+            </button>
+          </div>
+        ) : (
+          <div className="current-exercise">
+            <h2>{currentExercise.name}</h2>
+            <div className="exercise-details">
+              <div className="exercise-target">
+                <span className="detail-label">Target:</span>
+                <span className="detail-value">{currentExercise.target}</span>
+              </div>
+              <div className="exercise-info">
+                <span className="detail-label">Sets:</span>
+                <span className="detail-value">{currentExercise.sets}</span>
+              </div>
+              <div className="exercise-info">
+                <span className="detail-label">Reps:</span>
+                <span className="detail-value">{currentExercise.reps}</span>
+              </div>
+              {currentExercise.notes && (
+                <div className="exercise-notes">
+                  <span className="detail-label">Notes:</span>
+                  <span className="detail-value">{currentExercise.notes}</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="sets-container">
+              <h3>Sets</h3>
+              {sets[currentExerciseIndex].map((set, index) => (
+                <div key={index} className={`set-item ${set.completed ? 'completed' : ''}`}>
+                  <div className="set-number">Set {index + 1}</div>
+                  <div className="set-fields">
+                    <div className="set-field">
+                      <label htmlFor={`weight-${index}`}>Weight (lbs)</label>
+                      <input
+                        type="number"
+                        id={`weight-${index}`}
+                        value={set.weight || ''}
+                        onChange={(e) => handleWeightChange(index, e.target.value)}
+                        disabled={set.completed}
+                        min="0"
+                        step="5"
+                      />
+                    </div>
+                    <div className="set-field">
+                      <label htmlFor={`reps-${index}`}>Reps</label>
+                      <input
+                        type="number"
+                        id={`reps-${index}`}
+                        value={set.reps}
+                        readOnly
+                        disabled
+                      />
+                    </div>
+                  </div>
+                  <button 
+                    className={`complete-set-button ${set.completed ? 'disabled' : ''}`}
+                    onClick={() => handleSetComplete(index)}
+                    disabled={set.completed}
+                  >
+                    {set.completed ? 'Completed' : 'Complete Set'}
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            <div className="navigation-buttons">
+              {currentExerciseIndex > 0 && (
+                <button
+                  className="nav-button prev-button"
+                  onClick={() => setCurrentExerciseIndex(currentExerciseIndex - 1)}
                 >
-                  {showPreviousWeight ? 'Hide' : 'Show'} Last Time
+                  Previous Exercise
                 </button>
               )}
               
-              {showPreviousWeight && lastWeight && (
-                <div className="previous-weight-info">
-                  <p>Last time: {lastWeight.weight} lbs × {lastWeight.reps} reps</p>
-                  <p className="weight-date">{new Date(lastWeight.date).toLocaleDateString()}</p>
-                </div>
+              {currentExerciseIndex < workoutPlan.exercises.length - 1 && (
+                <button
+                  className="nav-button next-button"
+                  onClick={moveToNextExercise}
+                >
+                  Next Exercise
+                </button>
               )}
               
-              <div className="weight-input-row">
-                <div className="input-group">
-                  <label>Weight (lbs)</label>
-                  <input 
-                    type="number" 
-                    value={currentWeight}
-                    onChange={(e) => setCurrentWeight(e.target.value)}
-                    placeholder={lastWeight ? lastWeight.weight : "0"}
-                  />
-                </div>
-                
-                <div className="input-group">
-                  <label>Reps</label>
-                  <input 
-                    type="number" 
-                    value={currentReps}
-                    onChange={(e) => setCurrentReps(e.target.value)}
-                    placeholder={lastWeight ? lastWeight.reps : "0"}
-                  />
-                </div>
-              </div>
-              
-              <button 
-                className="complete-set-button"
-                onClick={handleSetComplete}
-              >
-                Complete Set
-              </button>
-            </div>
-          ) : (
-            <div className="timed-exercise">
-              <div className="time-display">
-                {currentExerciseData.timePerSet || 30} seconds
-              </div>
-              <button 
-                className="start-button"
-                onClick={startExercise}
-              >
-                Start
-              </button>
-            </div>
-          )}
-          
-          <button 
-            className="skip-set-button"
-            onClick={handleSkipSet}
-          >
-            Skip Set
-          </button>
-        </div>
-      ) : (
-        <div className="workout-loading">
-          <p>Loading workout...</p>
-        </div>
-      )}
-      
-      <div className="exercise-list-toggle" onClick={() => setShowExerciseOptions(!showExerciseOptions)}>
-        {showExerciseOptions ? 'Hide Exercise List' : 'Show Exercise List'}
-      </div>
-      
-      {showExerciseOptions && (
-        <div className="exercise-options">
-          <div className="exercise-list-section">
-            <h4>Workout Exercises</h4>
-            <ul className="exercise-list">
-              {allExercises.map((exercise, index) => (
-                <li 
-                  key={index} 
-                  className={`exercise-item ${index === currentExercise ? 'current' : ''} ${
-                    index < currentExercise ? 'completed' : ''
-                  }`}
+              {currentExerciseIndex === workoutPlan.exercises.length - 1 && (
+                <button
+                  className="nav-button finish-button"
+                  onClick={completeWorkout}
                 >
-                  <span className="exercise-name">{exercise.name}</span>
-                  <div className="exercise-sets">
-                    {exercise.sets.map((set, setIndex) => (
-                      <div 
-                        key={setIndex} 
-                        className={`set-indicator ${
-                          set.completed ? 'completed' : 
-                          (index === currentExercise && setIndex === currentSet) ? 'current' : ''
-                        }`}
-                      ></div>
-                    ))}
-                  </div>
-                </li>
-              ))}
-            </ul>
+                  Finish Workout
+                </button>
+              )}
+            </div>
           </div>
-          
-          <button 
-            className="add-exercise-button" 
-            onClick={() => setShowAddExercise(true)}
-          >
-            Add Exercise
-          </button>
-        </div>
-      )}
+        )}
       </div>
     </Layout>
   );

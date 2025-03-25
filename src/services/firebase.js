@@ -97,6 +97,117 @@ export const updateUserProfile = async (userId, profileData) => {
   }
 };
 
+// Onboarding status functions
+export const updateOnboardingStatus = async (userId, isCompleted) => {
+  try {
+    const userRef = doc(db, "userProfiles", userId);
+    await updateDoc(userRef, { onboardingCompleted: isCompleted });
+    return { error: null };
+  } catch (error) {
+    return { error: error.message };
+  }
+};
+
+export const getOnboardingStatus = async (userId) => {
+  try {
+    const { profile, error } = await getUserProfile(userId);
+    if (error) {
+      return { completed: false, error };
+    }
+    return { completed: profile?.onboardingCompleted || false, error: null };
+  } catch (error) {
+    return { completed: false, error: error.message };
+  }
+};
+
+// Exercise history functions
+export const saveExerciseHistory = async (userId, exerciseName, exerciseData) => {
+  try {
+    const userRef = doc(db, "exerciseHistory", userId);
+    const docSnap = await getDoc(userRef);
+    
+    let exercises = {};
+    if (docSnap.exists()) {
+      exercises = docSnap.data().exercises || {};
+    }
+    
+    exercises[exerciseName.toLowerCase()] = {
+      ...exerciseData,
+      lastUsed: new Date().toISOString()
+    };
+    
+    await setDoc(userRef, { exercises }, { merge: true });
+    return { error: null };
+  } catch (error) {
+    return { error: error.message };
+  }
+};
+
+export const getExerciseHistory = async (userId) => {
+  try {
+    const userRef = doc(db, "exerciseHistory", userId);
+    const docSnap = await getDoc(userRef);
+    
+    if (docSnap.exists()) {
+      return { history: docSnap.data().exercises || {}, error: null };
+    } else {
+      return { history: {}, error: null };
+    }
+  } catch (error) {
+    return { history: {}, error: error.message };
+  }
+};
+
+// Exercise weight tracking functions
+export const saveExerciseWeight = async (userId, exerciseName, weightRecord) => {
+  try {
+    const userRef = doc(db, "exerciseWeights", userId);
+    const docSnap = await getDoc(userRef);
+    
+    let exercises = {};
+    if (docSnap.exists()) {
+      exercises = docSnap.data().exercises || {};
+    }
+    
+    // Get existing records or create new array
+    const records = exercises[exerciseName] || [];
+    
+    // Add new record to beginning and limit to 10 records
+    records.unshift(weightRecord);
+    if (records.length > 10) {
+      records.pop();
+    }
+    
+    exercises[exerciseName] = records;
+    
+    await setDoc(userRef, { exercises }, { merge: true });
+    return { error: null };
+  } catch (error) {
+    return { error: error.message };
+  }
+};
+
+export const getExerciseWeights = async (userId, exerciseName = null) => {
+  try {
+    const userRef = doc(db, "exerciseWeights", userId);
+    const docSnap = await getDoc(userRef);
+    
+    if (!docSnap.exists()) {
+      return { weights: exerciseName ? [] : {}, error: null };
+    }
+    
+    const exercises = docSnap.data().exercises || {};
+    
+    if (exerciseName) {
+      return { weights: exercises[exerciseName] || [], error: null };
+    }
+    
+    return { weights: exercises, error: null };
+  } catch (error) {
+    return { weights: exerciseName ? [] : {}, error: error.message };
+  }
+};
+
 // Workout functions
 export const saveWorkoutPlan = async (userId, workoutPlan) => {
   try {
